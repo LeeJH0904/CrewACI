@@ -14,6 +14,7 @@ cd aciarena
 # Step 3: Install dependencies
 pip install -e .
 pip install openai
+pip install google-genai
 pip install torch
 ```
 
@@ -21,8 +22,9 @@ pip install torch
 
 ### 1. Set up the API keys for both the agent model and the judge model.
 See `configs/judge.yaml` and `configs/model.yaml`
+
 ```yaml
-# Step 1: Set up the API keys
+# openai API 사용할 경우
 provider: openai
 api_key: <your_api_key>
 base_url: <your_base_url>

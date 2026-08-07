@@ -1,3 +1,9 @@
+## 2026-08-06
+
+- Google Gemini provider 지원 추가: `GeminiLLM` 구현 및 provider 라우팅 추가.
+- `ACISentinel`이 judge 설정의 provider에 따라 OpenAI/Gemini를 선택하도록 수정.
+- Gemini API 사용을 위해 `google-genai` 의존성 추가.
+
 # Debug Log
 
 ## 2026-07-23 — `ModuleNotFoundError: No module named 'aciarena.defenses.safety_filter'`
