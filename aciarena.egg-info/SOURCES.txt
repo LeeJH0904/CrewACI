@@ -10,6 +10,7 @@ aciarena/agent_components/__init__.py
 aciarena/agent_components/base_agent.py
 aciarena/agent_components/llms/__init__.py
 aciarena/agent_components/llms/base_llm.py
+aciarena/agent_components/llms/gemini_llm.py
 aciarena/agent_components/llms/openai_llm.py
 aciarena/agent_components/memory/__init__.py
 aciarena/agent_components/memory/base_memory.py

@@ -3,19 +3,31 @@
 ## 🔧 Installation
 
 ```bash
-# Step 1: Create and activate the environment
-conda create -n aciarena python=3.10
-conda activate aciarena
+# 디렉토리 생성
+mkdir ACIArena
+cd ./ACIArena
 
-# Step 2: Clone the repository
-git clone https://github.com/Greysahy/aciarena.git
-cd aciarena
+# Step 1: 가상환경 세팅
+# conda create -n aciarena python=3.10
+# conda activate aciarena
 
-# Step 3: Install dependencies
+sudo apt update
+sudo apt install -y python3 python3-venv
+
+python3 -m venv .aciarena
+source .aciarena/bin/activate 
+
+# Step 2: 리포지토리 클론
+git clone https://github.com/LeeJH0904/CrewACI.git
+cd CrewACI
+
+# Step 3: 의존성 설치
+sudo apt install python3-pip
 pip install -e .
-pip install openai
-pip install google-genai
 pip install torch
+
+# 가상환경 종료 시
+deactivate
 ```
 
 ## 🚀 Quickstart
@@ -37,6 +49,6 @@ max_tokens: 1024
 ```powershell
 # Step 2: Run the evaluation pipeline
 
-python benchmark.py --mas sc --suite disruption --task_domain math --malicious_agents aggregate --max_workers 16 
+python3 benchmark.py --mas sc --suite disruption --task_domain math --malicious_agents aggregate --max_workers 1
 
 ```
