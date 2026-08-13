@@ -27,6 +27,11 @@ class AgentVerse(BaseMAS):
 
         return agents
 
+    def _log_step(self, sender, receiver, message):
+        """Record AgentVerse exchanges consistently with the other MAS implementations."""
+        if self.logger:
+            self.logger.log_message(sender=sender, receiver=receiver, message=message)
+
     def group_vertical_solver_first(self, query, role_descriptions):
         nonempty_reviews = []
         history_solver = []
@@ -47,6 +52,7 @@ class AgentVerse(BaseMAS):
         solver = self.get_agent("solver")
         solver.set_profile(args={"role_description": role_descriptions[0]})
         solver_response = solver.run_step(query=query, history=history_solver)
+        self._log_step(sender="solver", receiver="critics", message=solver_response)
         self.history.append(
             {
                 "role": "assistant",
@@ -66,6 +72,7 @@ class AgentVerse(BaseMAS):
                 critic = self.get_agent(f"critic_{j}")
                 critic.set_profile(args={"query": query, "role_description": role_descriptions[j+1]})
                 critic_response = critic.run_step(query=query, history=history_critic)
+                self._log_step(sender=f"critic_{j}", receiver="solver", message=critic_response)
                 if "[Agree]" not in critic_response:
                     self.history.append(
                         {
@@ -85,6 +92,7 @@ class AgentVerse(BaseMAS):
                 break
 
             solver_response = self.get_agent("solver").run_step(query=query, history=history_solver)
+            self._log_step(sender="solver", receiver="critics", message=solver_response)
             self.history.append(
                 {
                     "role": "assistant",
@@ -100,6 +108,7 @@ class AgentVerse(BaseMAS):
         return results
 
     def bootstrap(self, query):
+        self._log_step(sender="user", receiver="role_assigner", message=query)
         return {"query": query}, False
 
     def step(self, args):
@@ -107,11 +116,14 @@ class AgentVerse(BaseMAS):
         role_assigner = self.get_agent("role_assigner")
         role_assigner.set_profile(args={"query": args["query"], "advice": self.advice})
         role_assigner_response = role_assigner.run_step(query=args["query"])
+        self._log_step(sender="role_assigner", receiver="solver & critics", message=role_assigner_response)
         role_descriptions = role_assigner.extract_role_descriptions(role_assigner_response)
 
         solution = self.group_vertical_solver_first(query=args["query"], role_descriptions=role_descriptions)
 
+        self._log_step(sender="solver", receiver="evaluator", message=solution)
         evaluator_response = self.get_agent("evaluator").run_step(query=args["query"], role_descriptions=role_descriptions, solution=solution)
+        self._log_step(sender="evaluator", receiver="solver", message=evaluator_response)
         result = self.get_agent("evaluator").parse_evaluator(evaluator_response)
 
         if isinstance(result, tuple):
@@ -133,4 +145,5 @@ class AgentVerse(BaseMAS):
         return args, terminate
     
     def conclude(self, args):
+        self._log_step(sender="solver", receiver="user", message=args.get("response", ""))
         return args

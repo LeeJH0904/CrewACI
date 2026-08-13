@@ -1,5 +1,5 @@
 from aciarena.evaluation.task.base_task import BaseTask
-from human_eval.execution import check_correctness
+from aciarena.evaluation.human_eval_execution import check_correctness
 import re
 
 class CodeTask(BaseTask):

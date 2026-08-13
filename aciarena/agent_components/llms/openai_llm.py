@@ -1,12 +1,19 @@
+import os
 from aciarena.agent_components.llms.base_llm import BaseLLM
 from openai import OpenAI, AsyncOpenAI
-from openai import OpenAIError, RateLimitError, APIConnectionError, Timeout, BadRequestError
+from openai import OpenAIError, RateLimitError, APIConnectionError, APITimeoutError, BadRequestError
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential, AsyncRetrying, RetryError
 from pydantic import BaseModel
+from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_random_exponential
+
+
 
 class AgentResponseSchema(BaseModel):
     response: str
     memory: str
+
+class EmptyLLMResponseError(OpenAIError):
+    """Raised when the API returns a choice without textual content."""
 
 class OpenAILLM(BaseLLM):
     def __init__(self, model_name="gpt-3.5-turbo", temperature=0.0, max_tokens=1024, seed=42):
@@ -21,7 +28,7 @@ class OpenAILLM(BaseLLM):
         self.output_tokens = 0
 
     def from_config(self, config: dict):
-        api_key = config.get("api_key")
+        api_key = config.get("api_key") or os.environ.get("OPENAI_API_KEY")
         base_url = config.get("base_url", "https://api.openai.com/v1")
 
         if not api_key:
@@ -37,10 +44,12 @@ class OpenAILLM(BaseLLM):
         return self
 
     @retry(
-        retry=retry_if_exception_type((RateLimitError, Timeout, APIConnectionError, OpenAIError)),
-        wait=wait_exponential(multiplier=1, min=1, max=10),
-        stop=stop_after_attempt(3),
-        reraise=True
+        retry=retry_if_exception_type(
+          (RateLimitError, APITimeoutError, APIConnectionError, EmptyLLMResponseError)
+        ),
+        wait=wait_random_exponential(multiplier=1, min=1, max=60),
+        stop=stop_after_attempt(8),
+        reraise=True,
     )
     def call_llm(self, messages, temperature=None, json_output=False, option_num=None, is_multi_options=False) -> str:
         if temperature is not None:
@@ -71,18 +80,34 @@ class OpenAILLM(BaseLLM):
             else:    
                 response = self.client.chat.completions.create(**params)
                 self.calculate_token_usage(response)
-                return response.choices[0].message.content if response.choices else "[Empty response]"
+                if not response.choices:
+                    # An empty choice list cannot be consumed by callers; retry it as a transient response.
+                    raise EmptyLLMResponseError("LLM returned no choices.")
+
+                choice = response.choices[0]
+                content = choice.message.content
+                if content is None:
+                    # Preserve the provider's termination details so content filters/refusals are diagnosable.
+                    raise EmptyLLMResponseError(
+                        "LLM returned no content: "
+                        f"finish_reason={choice.finish_reason}, "
+                        f"refusal={getattr(choice.message, 'refusal', None)}"
+                    )
+                return content
         except BadRequestError as e:
-            raise RuntimeError(f"Bad request to OpenAI API: {e}")
+            raise RuntimeError(f"Bad request to OpenAI API: {e}") from e
+        except (RateLimitError, APITimeoutError, APIConnectionError, EmptyLLMResponseError):
+            # Tenacity가 원래 예외 타입을 인식하도록 그대로 전달
+            raise
         except OpenAIError as e:
-            raise RuntimeError(f"OpenAI error: {e}")
+            raise RuntimeError(f"OpenAI error: {e}") from e
         except Exception as e:
-            raise RuntimeError(f"Unhandled error: {e}")
+            raise RuntimeError(f"Unhandled error: {e}") from e
 
     async def async_call_llm(self, messages) -> str:
         try:
             async for attempt in AsyncRetrying(
-                retry=retry_if_exception_type((RateLimitError, Timeout, APIConnectionError, OpenAIError)),
+                retry=retry_if_exception_type((RateLimitError, APITimeoutError, APIConnectionError, OpenAIError)),
                 wait=wait_exponential(multiplier=1, min=1, max=10),
                 stop=stop_after_attempt(3),
                 reraise=True

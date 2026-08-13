@@ -1,8 +1,11 @@
 from aciarena.utils import build_suite
+from dotenv import load_dotenv
 import argparse
 import json
 import os
 import yaml
+
+load_dotenv()
 
 def main(args):
     model_config = yaml.safe_load(open("configs/model.yaml"))
