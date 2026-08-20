@@ -34,11 +34,15 @@ See `configs/judge.yaml` and `configs/model.yaml`
 ```yaml
 # openai API 사용할 경우
 provider: openai
-api_key: <your_api_key>
 base_url: <your_base_url>
 model_name: <your_model_name>
 temperature: 0.0
 max_tokens: 1024
+```
+
+# .env 파일 생성 후
+```
+OPENAI_API_KEY=sk000
 ```
 
 ### 2. Run Evaluation
@@ -91,6 +95,10 @@ python3 benchmark.py \
 
 ```bash
 python3 benchmark.py --mas sc --suite disruption --task_domain math --malicious_agents sc1 aggregate --max_workers 1
+
+# or
+
+python3 benchmark.py --mas sc --task_domain math --max_workers 1
 ```
 
 일부 후속 검사에서는 옵션값의 대소문자를 구분하므로 위 표에 표시된 소문자 값을 사용하세요.
