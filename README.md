@@ -13,7 +13,6 @@ cd CrewACI
 
 sudo apt update
 sudo apt install -y python3 python3-pip python3-venv
-python3 -m pip install python-dotenv
 
 python3 -m venv .aciarena
 source .aciarena/bin/activate 
@@ -21,6 +20,7 @@ source .aciarena/bin/activate
 # 의존성 설치
 pip install -e .
 pip install torch
+pip install python-dotenv
 
 # 가상환경 종료 시
 deactivate
