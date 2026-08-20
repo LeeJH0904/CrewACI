@@ -26,6 +26,7 @@ aciarena/defenses/aci_sentinel.py
 aciarena/defenses/bert_detector.py
 aciarena/evaluation/__init__.py
 aciarena/evaluation/evaluation_suite.py
+aciarena/evaluation/human_eval_execution.py
 aciarena/evaluation/task_executor.py
 aciarena/evaluation/task/__init__.py
 aciarena/evaluation/task/base_task.py

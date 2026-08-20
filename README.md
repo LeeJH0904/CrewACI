@@ -3,27 +3,22 @@
 ## 🔧 Installation
 
 ```bash
-# 디렉토리 생성
-mkdir ACIArena
-cd ./ACIArena
 
-# Step 1: 가상환경 세팅
+git clone https://github.com/LeeJH0904/CrewACI.git
+cd CrewACI
+
+# 가상환경 세팅
 # conda create -n aciarena python=3.10
 # conda activate aciarena
 
 sudo apt update
-sudo apt install -y python3 python3-venv
+sudo apt install -y python3 python3-pip python3-venv
 python3 -m pip install python-dotenv
 
 python3 -m venv .aciarena
 source .aciarena/bin/activate 
 
-# Step 2: 리포지토리 클론
-git clone https://github.com/LeeJH0904/CrewACI.git
-cd CrewACI
-
-# Step 3: 의존성 설치
-sudo apt install python3-pip
+# 의존성 설치
 pip install -e .
 pip install torch
 
