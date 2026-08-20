@@ -90,8 +90,7 @@ python3 benchmark.py \
 다음과 같이 악성 에이전트를 여러 개 지정할 수도 있습니다.
 
 ```bash
-python3 benchmark.py --mas sc --suite disruption --task_domain math \
-  --malicious_agents sc1 aggregate --max_workers 1
+python3 benchmark.py --mas sc --suite disruption --task_domain math --malicious_agents sc1 aggregate --max_workers 1
 ```
 
 일부 후속 검사에서는 옵션값의 대소문자를 구분하므로 위 표에 표시된 소문자 값을 사용하세요.
