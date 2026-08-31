@@ -49,3 +49,14 @@ maspi_math.json → aciarena_math.json
 오타 수정:
 timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%]S")
 -> timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+
+## 2026-08-31
+
+- CrewAI 통합을 위한 MAS scaffold 추가: `aciarena/mas/crewai/__init__.py`와 `aciarena/mas/crewai/crewai_mas.py` 생성.
+- `CrewAIMAS`를 `BaseMAS` 패턴에 맞춰 구현하고, `@register_mas("crewai")`로 registry에 등록.
+- `aciarena/mas/__init__.py`에서 `CrewAIMAS`를 import하도록 연결해 프로젝트 수준에서 접근 가능하게 구성.
+- `python3 -m compileall aciarena` 검증 결과, 새 CrewAI 코드의 문법 오류는 없었음.
+- CrewAI 설치 검증 완료: `pip install crewai` 후 `pip show crewai`에서 `Version: 1.15.18` 확인.
+- 런타임 검증 단계에서 의존성 충돌 발견: 현재 프로젝트는 `openai==1.63.2`, `pydantic==2.10.6` 기준인데, CrewAI 1.15.18는 더 최신 OpenAI/Pydantic 범위를 요구함.
+- 추가로 프로젝트 전체 import 단계에서 `torch`가 없어 `ModuleNotFoundError: No module named 'torch'` 발생. 이건 기존 프로젝트 환경 의존성이 아직 해결되지 않았음을 의미함.
+- 결론: CrewAI 통합 구조는 마련되었지만, 실제 benchmark 실행까지 가려면 프로젝트 의존성 버전 정합성 및 `torch` 설치/호환성 해결이 필요함.
