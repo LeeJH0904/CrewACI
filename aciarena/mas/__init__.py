@@ -6,3 +6,4 @@ from .camel import CAMEL
 from .mad import MAD
 from .self_consistency import SelfConsistency
 from .llm_debate import LLMDebate
+from .crewai import CrewAIMAS
