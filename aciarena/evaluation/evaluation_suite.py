@@ -20,6 +20,15 @@ class BaseEvaluationSuite:
         }
         self.executor = build_executor(args=args, llm_config=self.judge_config)
         self.init_tasks(args=args)
+
+        limit = getattr(args, "limit", None)
+
+        if limit is not None:
+            if limit < 1:
+                raise ValueError("--limit must be at least 1.")
+
+            self.tasks = self.tasks[:limit]
+
         self.max_workers = args.max_workers
 
     def init_tasks(self, args):

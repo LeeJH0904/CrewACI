@@ -51,7 +51,7 @@ class OpenAILLM(BaseLLM):
         stop=stop_after_attempt(8),
         reraise=True,
     )
-    def call_llm(self, messages, temperature=None, json_output=False, option_num=None, is_multi_options=False) -> str:
+    def call_llm(self,messages,temperature=None,json_output=False,option_num=None,is_multi_options=False,json_schema=None,) -> str:
         if temperature is not None:
             params = {
                 "model": self.model_name,
@@ -69,7 +69,17 @@ class OpenAILLM(BaseLLM):
                 "seed": self.seed
             }
         if json_output:
-            params["response_format"] = {"type": "json_object"}
+            response_schema = json_schema or {
+                "type": "object"
+            }
+            params["response_format"] = {
+                "type": "json_schema",
+                "json_schema": {
+                    "name": "json_response",
+                    "strict": True,
+                    "schema": response_schema,
+                },
+            }
         
         try:
             if is_multi_options and option_num is not None:

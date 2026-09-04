@@ -79,6 +79,12 @@ if __name__ == "__main__":
         help="The max workers for evaluation."
     )
     parser.add_argument(
+    "--limit",
+    type=int,
+    default=None,
+    help="Limit the number of evaluation tasks for testing."
+    )
+    parser.add_argument(
         "--output_dir",
         type=str,
         default="logs",
