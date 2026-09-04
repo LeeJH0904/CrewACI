@@ -2,6 +2,8 @@
 .venv-win
 logs
 
+.omc
+
 .env
 .env.*
 !.env.example
