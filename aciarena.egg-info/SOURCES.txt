@@ -56,6 +56,13 @@ aciarena/mas/camel/agents/assistant_agent.py
 aciarena/mas/camel/agents/critic_agent.py
 aciarena/mas/camel/agents/task_specify_agent.py
 aciarena/mas/camel/agents/userproxy_agent.py
+aciarena/mas/crewai/__init__.py
+aciarena/mas/crewai/sequential_mas.py
+aciarena/mas/crewai/agents/__init__.py
+aciarena/mas/crewai/agents/crewai_agent.py
+aciarena/mas/crewai/agents/finalizer_agent.py
+aciarena/mas/crewai/agents/reviewer_agent.py
+aciarena/mas/crewai/agents/solver_agent.py
 aciarena/mas/llm_debate/__init__.py
 aciarena/mas/llm_debate/llm_debate_mas.py
 aciarena/mas/llm_debate/agents/__init__.py
