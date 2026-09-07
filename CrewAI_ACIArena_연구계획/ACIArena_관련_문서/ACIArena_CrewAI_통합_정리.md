@@ -753,18 +753,16 @@ aciarena/aciarena/mas/crewai/
 
 ## 로컬 1차 자료
 
-- ACIArena 구현: `aciarena/`
-- ACIArena 원 논문: `ACIArena_관련_문서/ACIARENA - Toward Unified Evaluation for Agent Cascading Injection/`
-- MASLab 논문: `ACIArena_관련_문서/MASLab_A Unified and Comprehensive Codebase.md`
-- 실행 로그: `aciarena/logs/`
+- ACIArena 구현: 프로젝트 루트 `aciarena/`
+- ACIArena 원 논문: [`ACIARENA 논문/ACIARENA - Toward Unified Evaluation for Agent Cascading Injection.md`](<ACIARENA 논문/ACIARENA - Toward Unified Evaluation for Agent Cascading Injection.md>)
+- MASLab 논문: [`MASLab 논문/MASLab_A Unified and Comprehensive Codebase.md`](<MASLab 논문/MASLab_A Unified and Comprehensive Codebase.md>)
+- 실행 로그: 프로젝트 루트 `logs/`
 
 ## 기존 분석 문서
 
-- `Debug_log.md`: 로컬 실행 버그 수정 기록
-- `ACIArena_관련_문서/ACIArena_요약.md`: 논문 한글 요약
-- `ACIArena_관련_문서/논문_구현_비교.md`: 논문과 코드 차이의 상세 조사
-- `CrewAI_통합_평가.md`: 통합 노선의 초기 평가
-- `CrewAI_대표성_및_재구현_설계.md`: 대표성 및 P0 보존 요소 논의
+- `Debug_log.md`: 로컬 실행 버그 수정 기록 (프로젝트 루트)
+- [`ACIArena_논문_구현_비교.md`](ACIArena_논문_구현_비교.md): 논문과 코드 차이의 상세 조사
+- `ACIArena_요약.md`(논문 한글 요약), `CrewAI_통합_평가.md`(통합 노선 초기 평가), `CrewAI_대표성_및_재구현_설계.md`(대표성·P0 보존 요소 논의): 내용이 본 문서와 크게 중복되어 별도 파일로 유지하지 않고 본 문서에 통합함. 논문 원문은 위 `ACIARENA 논문/` 사본을 직접 참조한다.
 
 기존 문서의 판단 중 이 문서에서 수정한 사항:
 

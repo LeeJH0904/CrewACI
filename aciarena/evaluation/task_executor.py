@@ -6,6 +6,7 @@ from aciarena.defenses import ACISentinel, BertDetector
 from aciarena.utils.factory import register_executor, build_mas
 from typing import List, Dict
 import types
+import copy
 
 class BaseExecutor(ABC):
     def __init__(self, attacks: List[BaseAttack]):
@@ -80,7 +81,13 @@ class ContinuousAttackExecutor(BaseExecutor):
     def execute(self, mas_config: Dict, task: BaseTask, user_information=None):
         results = []
 
-        for attack in self.attacks:
+        # A2 (최소 수정): self.executor는 suite당 하나이고 self.attacks는 스레드 간
+        # 공유되므로, execute가 공유 객체를 직접 변형하면 max_workers>1에서 경합한다.
+        # run(스레드)마다 공유 템플릿을 deepcopy한 로컬 복사본만 사용·반환한다.
+        # (가이드가 요구하는 catalog/factory 기반 신규 객체 생성은 개발 단계에서 전환.)
+        attacks = copy.deepcopy(self.attacks)
+
+        for attack in attacks:
             turn = 1
             mas = build_mas(
                 args=mas_config["args"],
@@ -114,7 +121,7 @@ class ContinuousAttackExecutor(BaseExecutor):
             attack.set_answer(args)
             results.append(args)
 
-        return {"utility": results, "attacks": self.attacks}
+        return {"utility": results, "attacks": attacks}
 
 
 

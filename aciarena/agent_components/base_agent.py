@@ -14,10 +14,10 @@ def get_llm(llm_config: dict) -> BaseLLM:
     raise ValueError(f"Unsupported LLM provider: {llm_config.get('provider')}")
 
 class BaseAgent:
-    def __init__(self, llm_config, name: str = "", tools=[], profile: Optional[str] = None):
+    def __init__(self, llm_config, name: str = "", tools=None, profile: Optional[str] = None):
         self.name = name                    # Agent name (e.g., "assistant")
         self.profile = profile              # System message or persona description
-        self.tools = tools
+        self.tools = tools if tools is not None else []
         self.memory = self.init_memory()    # Conversation memory
         self.llm = self.init_llm(llm_config)          # LLM interface to be implemented by subclass
         self.user_information = None

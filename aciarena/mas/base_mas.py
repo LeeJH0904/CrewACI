@@ -5,7 +5,9 @@ from aciarena.agent_components.base_agent import get_llm
 from aciarena.agent_components.base_agent import Message
 
 class BaseMAS(ABC):
-    def __init__(self, llm_config, malicious_agents=[], logger=None, max_turn=3):
+    def __init__(self, llm_config, malicious_agents=None, logger=None, max_turn=3):
+        if malicious_agents is None:
+            malicious_agents = []
         self.llm_config = llm_config
         self.logger = logger
         self.max_turn = max_turn
