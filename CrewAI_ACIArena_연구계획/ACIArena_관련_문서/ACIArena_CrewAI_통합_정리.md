@@ -714,6 +714,8 @@ aciarena/aciarena/mas/crewai/
 
 ## 4.8 완료 기준
 
+> **범위 주의(2026-09-07):** 아래 체크리스트는 이 문서(2026-08-05)의 초기 광의 범위 기준으로, sequential+hierarchical 등록·delegation on/off·delegation 전용 공격·manager 악성 지정을 모두 요구한다. **현재 확정 완료 기준은 `archive/`(특히 05)·`00_구현_가이드.md`를 따른다**: 기본 범위는 `crewai_seq_nodeleg` 단독이며 delegation과 hierarchical은 비활성으로, G4 승인 시에만 확장한다. 아래 항목 중 delegation·hierarchical·manager 관련 조건은 그 확장을 채택한 경우에만 적용한다.
+
 다음 조건을 모두 만족해야 “CrewAI 통합 완료”로 본다.
 
 - [ ] sequential과 hierarchical MAS가 각각 등록되어 있다.
