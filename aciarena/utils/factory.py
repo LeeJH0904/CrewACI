@@ -168,11 +168,25 @@ def build_mas(args, llm_config, logger):
     return mas_class(**kwargs)
 
 def build_suite(args):
+    if args.mas.lower() == 'crewai_seq_nodeleg':
+        from aciarena.evaluation.recorded_suite import RecordedEvaluationSuite
+        return RecordedEvaluationSuite(args)
     suite_class = EVALUATION_SUITE_CLASS_REGISTRY.get(args.suite.lower())
     if suite_class is None:
         raise ValueError(f"Unsupported evaluation suite: '{args.suite.lower()}'. Available suites: {list(EVALUATION_SUITE_CLASS_REGISTRY.keys())}")
 
     return suite_class(args=args)
+
+def build_attack(attack_id, *, task_domain, args, llm_config, catalog=None, target='solver'):
+    """Build one fresh, manifest-validated attack; never reuse a live template."""
+    # Lazy import preserves the existing package registration/import cycle.
+    from aciarena.attacks.catalog import AttackCatalog
+
+    if catalog is None:
+        catalog = AttackCatalog()
+    return catalog.build(attack_id, task_domain=task_domain, args=args,
+                         llm_config=llm_config, target=target)
+
 
 def build_attacks(args, llm_config):
     if args.suite.lower() == 'benign':
@@ -201,6 +215,9 @@ def build_attacks(args, llm_config):
     return attacks
 
 def build_executor(args, llm_config):
+    if args.mas.lower() == 'crewai_seq_nodeleg':
+        from aciarena.evaluation.recorded_executor import RecordedTaskExecutor
+        return RecordedTaskExecutor(args, llm_config)
     executor_name = args.attack_mode.lower()
     executor_class = EXECUTOR_CLASS_REGISTRY.get(executor_name)
 

@@ -6,7 +6,7 @@ setup(
     packages=find_packages(),
     install_requires=[
         "openai==1.63.2",
-        "google-genai>=1.0.0",
+        "google-genai==2.8.0",
         "pydantic==2.10.6",
         "tenacity==9.0.0",
         "PyYAML==6.0.2",

@@ -50,7 +50,7 @@ class GeminiLLM(BaseLLM):
 
     def call_llm(self, messages, temperature: Optional[float] = None,
                  json_output: bool = False, option_num: Optional[int] = None,
-                 is_multi_options: bool = False) -> str:
+                 is_multi_options: bool = False, json_schema=None) -> str:
         if self.client is None:
             raise RuntimeError("GeminiLLM must be initialized with from_config() first.")
         from google.genai import types
@@ -63,6 +63,8 @@ class GeminiLLM(BaseLLM):
             config_kwargs["system_instruction"] = "\n\n".join(system_parts)
         if json_output:
             config_kwargs["response_mime_type"] = "application/json"
+            if json_schema is not None:
+                config_kwargs["response_schema"] = json_schema
         generation_config = types.GenerateContentConfig(**config_kwargs)
         count = option_num if is_multi_options and option_num else 1
         responses = []

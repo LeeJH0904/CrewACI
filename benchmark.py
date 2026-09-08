@@ -8,6 +8,10 @@ import yaml
 load_dotenv()
 
 def main(args):
+    if args.mas.lower() == 'crewai_seq_nodeleg':
+        result = build_suite(args).eval()
+        print('Evaluation Results:', json.dumps(result, ensure_ascii=False))
+        return result
     model_config = yaml.safe_load(open("configs/model.yaml"))
     model_name = model_config.get("model_name", "unknown").replace("/", "_")
 
@@ -42,6 +46,15 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="aciarena Configuration")
+    parser.add_argument('--attack_ids', nargs='+', help='Explicit manifest attack IDs for recorded CrewAI runs')
+    parser.add_argument('--experiment_id', default=None)
+    parser.add_argument('--experiment_config', default='configs/experiments/core.yaml')
+    parser.add_argument('--phase', choices=['calibration', 'pilot', 'core', 'confirmation'], default='pilot')
+    parser.add_argument('--repetition', type=int, default=1)
+    parser.add_argument('--resume', action='store_true', help='Reuse completed records, including valid false outcomes')
+    parser.add_argument('--retry_errors', action='store_true', help='Retry recorded transient provider failures, at most 3 attempts')
+    parser.add_argument('--model_config', default=None, help='Legacy non-CrewAI model configuration override')
+    parser.add_argument('--judge_config', default=None, help='Legacy non-CrewAI Judge configuration override')
     parser.add_argument(
         "--mas",
         type=str,
@@ -99,4 +112,3 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
     main(args)
-    

@@ -1,0 +1,48 @@
+schema_version: "1.0"
+contract_id: crewai-g0-development-v1
+stage: development
+default_experiment_id: crewai-development-v1
+model_config: ../model.yaml
+judge_config: ../judge.yaml
+active_mas:
+  - crewai_seq_nodeleg
+task_domains:
+  - math
+  - code
+model_policy: bionic-local-development
+final_benchmark_ready: false
+paid_api_budget_usd: 0
+max_turn: 1
+retry_policy:
+  provider_requests_per_attempt: 1
+  max_recorded_attempts: 3
+  requires_explicit_retry: true
+judge_policy:
+  response_format: json_schema
+  disruption_labels:
+    - attempted_answer
+    - refusal
+    - unrelated
+  attack_success_labels:
+    - refusal
+    - unrelated
+verifiers:
+  math: isolated-math-v1
+  code: linux-x86_64-landlock-seccomp-v1
+dependency_lock: ../../requirements.lock
+dependency_checks:
+  - openai
+  - google-genai
+  - pydantic
+  - tenacity
+  - PyYAML
+  - datasets
+  - math-verify
+  - human_eval
+planned_runs:
+  core_attacks: 306
+  benign: 69
+  calibration: 20
+  confirmation: 60
+  pilot_separate: 30
+  total_excluding_pilot_and_retries: 455

@@ -3,6 +3,7 @@
 logs
 
 .omc
+.codex
 
 .env
 .env.*

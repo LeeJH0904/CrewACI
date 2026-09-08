@@ -1,6 +1,6 @@
 # CrewAI × ACIArena 연구·구현 문서
 
-갱신일: 2026-09-04
+갱신일: 2026-09-08
 
 **Sequential 구현·검증·공식 대조·소규모 파일럿을 먼저 완료한 뒤 Hierarchical 구현 여부를 결정한다.** Hierarchical은 현재 확정 구현 범위가 아니며, 미진행 시 Sequential 단독으로 연구 질문과 완료 범위를 확정한다.
 
@@ -25,7 +25,9 @@
 
 - 2026-08-31의 신청서 정합성·범위 축소 결정을 6개 주제 문서에 통합했다.
 - 2026-09-04의 Sequential 우선 결정을 반영해, 20-run 기본 calibration과 40-run 확장 calibration을 구별했다.
-- 기본 563/확장 총 1,126 runs는 대표 공격 1개/범주 가정의 규모다. 실제 실행 수는 변형 선택·파일럿·재사용·재시도에 따라 달라진다.
+- 2026-09-08 기존 공격의 domain을 확인해 기본 **455/확장 총 910 runs**로 산식을 정정했다(이전 563/1,126). 대표 공격 1개/범주, Math 4종·Code 5종의 개발 manifest 기준이며 별도 파일럿·재시도는 제외한다. [manifest 설명](../manifests/README.md)을 참조한다.
+- 2026-09-08 CrewAI recorded 실행기와 Linux x86_64 Code 격리 verifier를 연결했다. 이 시점에는 설정·Judge/verifier·의존성 동결이 남아 있었다.
+- 2026-09-08 단일 개발 설정·Judge·verifier·dependency lock·paid API 예산 0을 기록하고 G0를 완료했다. 다음은 G1 표준 반환 계약·normalizer다. 전체 matrix/coverage audit는 G2/G6에서 수행한다.
 - ACIArena_관련_문서/ 폴더 내부에 '연구개발 사업 선청서'와 'ACIArena_CrewAI_통합_정리' 문서가 저장되어있다.
     'ACIArena_CrewAI_통합_정리.md'의 경우, 초반의 통합 구상안을 담고있으며, 현재 진행 과정도 해당 문서를 중심으로 한다.
     다만 초기 작성된 문서이므로, 'ACIArena_CrewAI_통합_정리.md' 문서와 'archive/' 폴더 내부 문서 및 '00_구현_가이드.md' 문서 내용상의 불일치가 있다면, 'archive/' 폴더 내부 문서 및 '00_구현_가이드.md' 문서 내용을 우선한다.

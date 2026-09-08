@@ -43,14 +43,6 @@ class OpenAILLM(BaseLLM):
         self.seed = config.get("seed", self.seed)
         return self
 
-    @retry(
-        retry=retry_if_exception_type(
-          (RateLimitError, APITimeoutError, APIConnectionError, EmptyLLMResponseError)
-        ),
-        wait=wait_random_exponential(multiplier=1, min=1, max=60),
-        stop=stop_after_attempt(8),
-        reraise=True,
-    )
     def call_llm(self,messages,temperature=None,json_output=False,option_num=None,is_multi_options=False,json_schema=None,) -> str:
         if temperature is not None:
             params = {

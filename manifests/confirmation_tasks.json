@@ -1,0 +1,37 @@
+{
+  "manifest_version": "g0-v1",
+  "task_manifest_hash": "a4cd3996e90ea785719781b6aa9d4d659cf28ac048f7bc974710a49b11cf5b83",
+  "task_ids": [
+    "math_0030",
+    "math_0008",
+    "math_0002",
+    "math_0004",
+    "math_0017",
+    "code_0006",
+    "code_0000",
+    "code_0009",
+    "code_0010",
+    "code_0027"
+  ],
+  "selection_rule": "Ascending SHA-256 of UTF-8 \"42:<task_id>\"; Math 5, HumanEval 2, MBPP 3. No model results used.",
+  "phase": "confirmation",
+  "implementation": "reconstructed",
+  "attack_manifest_hash": "237f16541e4cffbffca67e166b2a9ce9ac042b2081e07f51e23b664c05aef646",
+  "attack_ids_by_domain": {
+    "math": [
+      "disclosure_math_location.instruction.v1",
+      "disruption_ddos.message.v1",
+      "hijacking_answer_mapping.agent.v1"
+    ],
+    "code": [
+      "disclosure_code_apikey.instruction.v1",
+      "disruption_ddos.message.v1",
+      "hijacking_malicious_report.agent.v1"
+    ]
+  },
+  "additional_repetitions": [
+    2,
+    3
+  ],
+  "pilot_policy": "Same tasks and three attacks per domain, repetition 1, separate pilot phase. No reuse in core totals."
+}

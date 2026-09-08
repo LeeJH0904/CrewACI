@@ -112,3 +112,15 @@ python benchmark.py --mas crewai_seq_nodeleg --task_domain math --max_worker 1 -
 ```
 
 일부 후속 검사에서는 옵션값의 대소문자를 구분하므로 위 표에 표시된 소문자 값을 사용하세요.
+
+
+### CrewAI G0 recorded execution
+
+`crewai_seq_nodeleg` now routes through the recorded executor with fresh per-run
+objects, `runs.jsonl` / `messages.jsonl`, configuration snapshots, and explicit
+attack IDs. See [the CLI and manifest guide](manifests/README.md#crewai-실행-cli-g0-개발-경로)
+and [offline validation](tests/README.md). On Linux x86_64, Code utility runs in
+a namespace/Landlock/seccomp/rlimit sandbox. If those kernel controls cannot be
+applied, it records `CodeSandboxUnavailable` without executing the generated code.
+The recorded CLI reads `configs/experiments/core.yaml` as its single G0 development
+contract and validates the referenced model, Judge, retry, verifier, and dependency lock.

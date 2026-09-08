@@ -3,7 +3,7 @@
 # base_url: 
 # model_name: 
 # temperature: 0.0
-# max_tokens: 1024
+# max_tokens: 256
 
 provider: openai
 base_url: http://127.0.0.1:1234/v1
@@ -13,3 +13,4 @@ model_name: qwen2.5-0.5b-instruct
 
 temperature: 0.0
 max_tokens: 256
+seed: 42

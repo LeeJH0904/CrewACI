@@ -1,0 +1,26 @@
+{
+  "manifest_version": "g0-v1",
+  "task_manifest_hash": "a4cd3996e90ea785719781b6aa9d4d659cf28ac048f7bc974710a49b11cf5b83",
+  "task_ids": [
+    "math_0030",
+    "math_0008",
+    "math_0002",
+    "math_0004",
+    "math_0017",
+    "code_0006",
+    "code_0000",
+    "code_0009",
+    "code_0010",
+    "code_0027"
+  ],
+  "selection_rule": "Ascending SHA-256 of UTF-8 \"42:<task_id>\"; Math 5, HumanEval 2, MBPP 3. No model results used.",
+  "phase": "calibration",
+  "attack_id": "none",
+  "implementations": [
+    "reconstructed",
+    "native"
+  ],
+  "repetitions": [
+    1
+  ]
+}

@@ -1,3 +1,71 @@
+## 2026-09-08 — G0 일곱 번째 작업: 설정·Judge·의존성 동결 및 G0 완료
+
+- **단일 설정 진입점:** `configs/experiments/core.yaml`을 G0 개발 계약 v1로 추가. `model.yaml`·`judge.yaml`을 참조하며 복제하지 않는다. 활성 MAS·domain, 로컬 Bionic 정책, paid API 예산 0, max turn 1, 재시도, Judge, verifier, 예정 run 수와 dependency lock을 한 곳에서 검사한다.
+- **모델·Judge:** 양쪽 모두 loopback OpenAI 호환 `qwen2.5-0.5b-instruct`, temperature 0.0, seed 42 요청으로 고정. Agent max tokens 1,024, Judge 256. Disruption Judge는 strict `json_schema`와 attempted_answer/refusal/unrelated 세 label을 사용하고 refusal/unrelated만 공격 성공이다.
+- **재시도 정합:** 동기 OpenAI wrapper의 내부 8회 자동 재시도를 제거했다. 기록된 attempt마다 provider 요청 1회이며, 일시적 오류의 새 attempt는 사용자가 `--retry_errors`를 지정할 때만 총 3회까지 허용한다.
+- **의존성:** 현재 가상환경 93개 package의 exact version을 `requirements.lock`에 기록하고 G0 필수 package가 실행 환경과 일치하는지 시작 전에 확인한다. `setup.py`의 google-genai도 실제 검증 버전 2.8.0으로 pin했다. config hash에 contract와 lock hash를 포함한다.
+- **검증:** 설정 변경 거부, lock 대조, Judge label/strict schema, provider 요청 1회 정책을 unit test로 확인. unit 51개·실행기 통합 16개·기존 회귀 9개, 누적 76개 통과. manifest와 diff 검사 통과, 실제 모델 API 호출 0회.
+- **Gate:** 가이드의 G0 조건인 기준본·다섯 기반 문제·Math/Code 회귀·공통 계약·대표 공격·개발 설정·예산 기록을 충족했다. **G0 완료.** 전체 matrix/coverage audit는 가이드상 G2/G6 작업이며, 다음은 G1의 표준 반환 계약과 고정 normalizer다. G5 최종 GPT-4o-mini 설정·실제 seed 지원·유료 API 상한은 별도 최종 동결 대상이다.
+
+## 2026-09-08 — G0 여섯 번째 작업: Code 격리 verifier
+
+- **구현:** `code_verifier_worker.py`와 기본 `verify_code()` 경로를 추가. Linux x86_64에서 매 판정마다 user/network/PID namespace를 만들고, worker가 Landlock 파일 규칙과 seccomp syscall 제한을 강제한 뒤 모델 생성 Python을 실행한다.
+- **격리 정책:** network namespace와 seccomp로 네트워크 syscall을 차단한다. Python runtime은 읽기 전용이고 실행별 `/tmp/aciarena-code-*`만 쓰기 가능하다. 저장소 및 다른 `/tmp` 경로의 읽기·쓰기를 Landlock으로 차단한다. exec/fork/clone/setns/host signal·cross-process syscall도 차단한다.
+- **자원·판정:** CPU 4초, 주소공간 512 MiB, 파일 1 MiB, FD 64, process 32, core 0의 kernel limit과 외부 wall timeout 8초를 적용한다. HumanEval/MBPP 기존 prompt·test 계약과 2초 test timeout을 사용하며 정답/오답·모델 코드 timeout은 valid true/false, 격리 구성/worker 오류는 evaluation error다.
+- **fail closed:** Linux x86_64, `unshare`, Landlock 또는 seccomp가 없거나 적용에 실패하면 코드를 host에서 대체 실행하지 않고 `CodeSandboxUnavailable`을 기록한다. version을 명시한 외부 verifier 주입 경계는 유지한다.
+- **검증:** 기본 sandbox에서 HumanEval·MBPP 정답, timeout false, 네트워크·저장소 읽기·외부 파일 쓰기 차단을 확인했다. 실행기 통합 16개와 unit 46개 통과, manifest·diff 검사 통과. 기존 회귀 9개를 포함한 누적 71개이며 실제 모델 API 호출은 없다.
+- **현재 Gate:** Code 격리 verifier 하위 작업 완료. G0에는 설정·Judge/verifier·의존성 동결과 전체 matrix/coverage audit가 남아 있다. G1 normalizer는 아직 미구현이다.
+
+## 2026-09-08 — G0 다섯 번째 작업: CrewAI 실행기 연결
+
+- **연결:** benchmark → RecordedEvaluationSuite → RecordedTaskExecutor → run별 새 Attack/Judge/MAS/Agent → RunTrace → RunWriter. 다른 MAS는 기존 경로 유지.
+- **기록:** 실제 profile·LLM 입력·공격 메시지·Finalizer 원문·Judge 입출력, 실행 오류 row와 partial trace를 저장. 평가 오류/unknown은 false와 분리하고 BU/UA·ASR 유효 분모를 각각 집계.
+- **재현·재개:** credential 제외 설정 snapshot/source hash, 명시적 attack ID, 동일 run 동시 실행 잠금, valid false 포함 resume, 일시적 provider 오류의 명시적 재시도(최대 3시도)를 연결.
+- **디버깅:** math-verify의 signal timeout이 작업 스레드에서 오류를 삼켜 false를 반환하는 문제를 발견. hash 확인한 원본 verifier 메서드를 제한된 별도 프로세스 main thread에서 실행하도록 수정. 메서드 이름 verify가 라이브러리 verify를 가리는 worker namespace 문제도 통합 테스트로 수정.
+- **Code 경계:** 기본 utility는 CodeSandboxUnavailable 평가 오류를 기록. version 명시 외부 verifier 주입 경계를 제공하나 실제 네트워크·자원 격리 backend는 미연결. 신뢰 canonical fixture만 기존 HumanEval로 검증했으며 sandbox의 IPC 제한 때문에 허용 환경에서 재실행.
+- **검증:** 새 통합 테스트 14개 통과. 20개 병렬 run, 세 공격 표면, 정상 조건 오염 방지, 모델/생성/평가/저장 오류, resume/retry, Judge 원문, 분모 집계를 포함. 실제 모델 API 호출 없음. unit 46개·기존 회귀 9개까지 총 69개 통과. manifest 검사와 git diff --check 통과. tests/README.md 참조.
+- **현재 Gate:** G0 진행 중. 실행기 연결 하위 작업 완료. Code 격리 verifier, 설정·Judge/verifier 및 의존성 동결, 전체 matrix/coverage audit가 남음. G1 normalizer는 아직 identity 원문 경로.
+
+## 2026-09-08 — G0 네 번째 작업: 실행별 JSONL 저장 계층
+
+- **구현:** `aciarena/evaluation/run_writer.py` 추가. MessageRecord를 발생 시 append하고 RunRecord로 시도를 마감. run/attempt 유일성, 연속 seq, attack ID·시각·최종 raw 출력의 상호 대응 검증.
+- **동시성·내구성:** 로컬 POSIX flock으로 writer 인스턴스·스레드·프로세스의 검사/쓰기 직렬화. file/directory fsync와 `.write_pending.json`으로 저장 실패·중단을 드러내고 자동 덮어쓰기·tail 삭제·재시도 금지.
+- **실패·재개 기반:** 실패 row와 partial trace 보존, 시도 이력 append, valid false 완료 ID 조회, 다음 attempt 번호 조회 제공. 미마감 partial trace는 실패 row로 정리하기 전 다음 시도를 차단. 재시도 허용 정책은 실행기에 남겨 둠.
+- **저장 구조 audit:** 잘못된 JSON/중복/seq 단절/최종 출력 불일치/미마감 trace/복구 marker 검출. 예정 matrix 대비 누락·domain·공격 주입 coverage의 전체 audit는 후속 단계.
+- **검증:** writer 신규 테스트 **16개**, 기존 포함 unit test **45개 통과**. 100개 동시 실행의 100 rows/200 messages, 4개 프로세스의 20 rows, 중복 경쟁에서 단일 기록, reopen 후 완료 조회, partial write·fsync·마지막 directory fsync 장애를 확인. `build_manifests.py --check`, `git diff --check` 통과. API 호출 0회.
+- **문서:** DECISIONS의 WRITER-1~4, manifest 사용 설명, tests README, 구현·아키텍처·데이터 가이드 갱신.
+- **현재 Gate:** 여전히 G0 진행 중. 다음 작업은 기존 executor/logger를 catalog/factory·writer에 연결해 실제 run별 격리와 오류 row/partial trace 저장을 완성하는 것. 설정·Judge/verifier 동결도 남아 있음.
+
+## 2026-09-08 — G0 세 번째 작업: 공격 catalog/factory
+
+- **구현:** `aciarena/attacks/catalog.py`의 AttackCatalog·불변 AttackSpec과 `aciarena/utils/factory.py`의 단일 `build_attack()` 진입점 추가.
+- **사전 검증:** 8개 범주와 고유 ID, 허용 class·category·goal·domain·surface·Solver target, source/dependency/payload/verifier hash를 검증. 실제 소스의 등록 domain과 payload를 대조하고 import 순서에 의존하지 않음. 재사용 catalog도 생성 시 source/dependency·실제 payload를 재검사.
+- **실행 격리:** 각 호출에서 생성자를 실행해 새 Attack·Judge·SDK client 생성. 설정과 args만 deepcopy하고 live Attack/Judge는 복사·재사용하지 않음. 같은 catalog의 불변 spec만 공유.
+- **정상 조건:** `attack_id=none`은 호출마다 새 BenignAttack을 만들고 Judge를 생성하지 않음. payload·공격 판정은 None이며 기존 NoneAttack 기반 no-op 동작 유지. 결과 row의 not_applicable 매핑은 실행기 연결 시 처리.
+- **검증:** 신규 13개와 기존 16개를 합친 unit test **29개 통과**. 20개 동시 생성, 상태/config 분리, 실제 OpenAI wrapper 및 SDK client 분리(생성자 mock), 잘못된 manifest/request 사전 거부, registry 비의존성을 검증. `build_manifests.py --check`, `git diff --check` 통과. 실제 API 호출 0회.
+- **완료 경계:** 새 factory 경로만 완료. 기존 `build_attacks()` 및 ContinuousAttackExecutor의 deepcopy 경로는 아직 연결 전 상태이며 A2 전체 완료로 기록하지 않음. 다음은 JSONL writer, 이후 executor 연결·오류/partial trace 보존.
+
+## 2026-09-08 — G0 두 번째 작업: manifest 및 공통 기록 계약
+
+- **범위:** `manifests/`의 task·대표 공격·calibration·confirmation 4개 JSON과 `aciarena/evaluation/records.py`의 RunIdentity/RunRecord/MessageRecord v1.0을 추가. runtime·writer 배선 전 개발 계약 단계.
+- **데이터:** Math 39개·Code 30개에 안정적인 ID·원본 index·source/문항/정답 hash 기록. Math upstream ID는 자료에 없어 null. Code는 HumanEval 9개·MBPP 21개 확인.
+- **선정:** 기존 클래스 중 범주당 대표 1개, 전체 8개 범주 유지. 확인 표본은 고정 SHA-256 순위로 Math 5개·HumanEval 2개·MBPP 3개를 선택하고 domain별 disclosure instruction·DDOS message·hijacking agent를 지정. 성능 결과를 선정에 사용하지 않음.
+- **가이드 오류 정정:** SafetyCheck·MaliciousReport는 Code 전용, AnswerMapping은 Math 전용. 기존 domain 유지 개발안으로 핵심 공격 306회, 정상·대조·확인 반복 포함 455회, 별도 파일럿 30회로 산식 정정. 이전 414/563과의 차이는 `DECISIONS.md` DOMAIN-1 및 관련 가이드에 기록.
+- **계약:** strict 자료형, deterministic run_id, 1-based attempt/repetition/seq, timezone 시각, 실행/평가 오류 분리, valid false 완료 처리, nullable 미관측 값과 오류 출력. 메시지 직접 주입 표지와 공격 성공을 구분.
+- **검사:** `scripts/build_manifests.py --check/--dry-run`으로 소스·선정·hash 대조와 예정 수량 요약. `--write`만 명시적 재생성. 실제 공격 클래스와 static manifest payload 대조를 포함한 unit test 16개 추가. 실행 결과는 `tests/README.md`에 기록.
+- **남은 작업:** catalog/factory·run_writer·executor 연결, 실제 주입/오류 trace·동시성·resume·audit, 설정/Judge/verifier 의존성 동결. G0 전체 미완료, 실제 API 호출 없음.
+
+## 2026-09-08 — G0 첫 작업: 기준본 보존 및 오프라인 회귀 검증
+
+- **범위:** 단계별 개발의 첫 작업으로 기준본 보존과 기존 동작 회귀를 수행. G0 전체·G1 통과는 아직 아님.
+- **기준본:** 코드 commit `70c90bbc376b3fbe161e9310fb8606abaa4907ca`를 `baseline/g0-70c90bb` 브랜치로 보존. 작업 브랜치는 `LeeJH` 유지. 테스트·문서는 해당 commit 이후 추가한 작업 파일.
+- **추가 파일:** `tests/integration/test_g0_baseline.py`, `tests/golden/g0_baseline.json`, `tests/README.md`.
+- **검증:** 기존 SelfConsistency의 Math 1개·Code 1개에 고정 정답/오답을 전달해 실제 verifier의 1.0/0.0 판정을 확인. Sequential의 순서·context·pre/post 훅·최종 응답·Code 평가 연결, effective profile 반영, 모델 예외 전파, mutable default 수정과 중복 등록 제거도 확인.
+- **실행:** `.aciarena/bin/python -m unittest discover -s tests/integration -p 'test_g0_baseline.py' -v` → **9 tests, OK**. 실제 API 호출 0회.
+- **환경 오류:** 최초 실행은 HumanEval multiprocessing의 로컬 소켓이 실행 샌드박스에 차단돼 Code 검증에서 PermissionError/EOFError 발생. 허용된 환경의 재실행에서 모두 통과. verifier 대체나 skip 없이 검증.
+- **해석 한계:** 고정 응답 회귀이므로 모델 성능·공식 CrewAI 충실도·실제 공격 주입·동시성·Code sandbox 충족을 증명하지 않음. 세부 환경과 재실행 방법은 `tests/README.md`에 기록.
+- **다음 작업:** G0 계약·manifest·설정 동결과 catalog/factory·실행별 기록·오류 보존. 이후 G1 반환 계약 및 G2 공격·저장 검증 진행.
+
 ## 2026-08-31 — 도연: CrewAI 순차형 MAS 통합 및 공격 평가 검증
 
 * **통합 브랜치:** `feature/crewai-integration` 브랜치에서 ACIArena 내부에 CrewAI 방식의 순차형 MAS를 1차 구현.
