@@ -47,7 +47,12 @@ OPENAI_API_KEY=sk000
 ```
 
 ### 2. Run Evaluation
+
 ```bash
+# Step 1: LM Studio (Bionic) 실행
+
+Bionic 실행하여 API활성화 확인 후 진행
+
 # Step 2: Run the evaluation pipeline
 
 python3 benchmark.py --mas sc [--suite disruption] [--task_domain math] [--malicious_agents aggregate] [--max_workers 1]
@@ -160,6 +165,7 @@ recorded CLI는 `configs/experiments/core.yaml`을 단일 G0 개발 계약으로
 
 **즉, 이제 모든 로그는 '--experiment_id' 옵션으로 지정한 이름으로 만들어지는 logs/~ 폴더에 저장됩니다.**
 * '--experiment_id' 옵션을 지정하지 않으면 자동으로 [crewai-development-v1]로 생성됩니다.
+* 각 실험 폴더에는 `runs.jsonl`·`messages.jsonl` 외에 `configs/<hash>.json`(설정 스냅샷)·`.writer.lock`·`.run_locks/`가 함께 생성되며, 같은 `--experiment_id`로 다시 실행하면 기존 파일에 append(누적)됩니다.
 
 ```text
 runs.jsonl = "무엇이 나왔나(결과)"
