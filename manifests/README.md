@@ -204,6 +204,9 @@ Judge 기록은 `evaluation` phase이며 최종 출력 증거는 마지막 pipel
 `--experiment_config`의 기본값은 `configs/experiments/core.yaml`이며 이 파일이
 `model.yaml`·`judge.yaml`을 참조한다. CrewAI는 개별 model/Judge override를 거부한다.
 현재 설정은 G0 개발용으로 동결했으며 G5 최종 GPT-4o-mini 설정 동결과 구별한다.
+G1에서 `normalizer: text-envelope-v1`도 이 단일 설정에 고정했다. Finalizer 원문은
+`raw_response`에 보존하고 BOM·줄바꿈·양끝 공백만 정규화한 `response`를 verifier에
+전달한다.
 출력은 `<output_dir>/<experiment_id>/{runs,messages}.jsonl`과
 `configs/<config_hash>.json`이다. 설정 snapshot에서 인증정보를 제외한다.
 `--resume`은 valid false를 포함한 완료 run을 재사용한다. `--retry_errors`는

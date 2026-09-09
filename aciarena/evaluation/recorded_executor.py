@@ -1,6 +1,7 @@
-"""CrewAI G0 execution path: fresh objects -> trace -> verification -> row."""
+"""CrewAI recorded path: fresh objects -> trace -> verification -> row."""
 
 import copy
+from datetime import datetime, timedelta
 import hashlib
 from importlib.metadata import version
 import json
@@ -19,6 +20,7 @@ from urllib.parse import urlsplit, urlunsplit, parse_qsl, urlencode
 from .records import RunIdentity, RunRecord, canonical_hash
 from .run_writer import RunWriter, StorageError, RecordConflictError
 from .configuration import UTILITY_VERIFIER_VERSION
+from .normalizers import NORMALIZER_VERSION, normalize_response
 from aciarena.attacks.catalog import AttackCatalog, CatalogError
 from aciarena.mas.crewai.message_bus import RunTrace, ProtocolError, utc_now
 from aciarena.utils.factory import build_attack, build_mas
@@ -146,7 +148,10 @@ class RecordedTaskExecutor:
         self.judge_config = copy.deepcopy(judge_config)
         self.experiment_contract = copy.deepcopy(
             experiment_contract if experiment_contract is not None
-            else {'contract_id': 'direct-api-unpinned'})
+            else {'contract_id': 'direct-api-unpinned', 'normalizer': NORMALIZER_VERSION})
+        configured_normalizer = self.experiment_contract.get('normalizer', NORMALIZER_VERSION)
+        if configured_normalizer != NORMALIZER_VERSION:
+            raise ValueError('Experiment normalizer and implementation version disagree')
         self.experiment_id = experiment
         self.catalog = catalog if catalog is not None else AttackCatalog()
         self.writer = writer if writer is not None else RunWriter(Path(args.output_dir) / experiment)
@@ -189,6 +194,7 @@ class RecordedTaskExecutor:
                    'aciarena/agent_components/llms/openai_llm.py', 'aciarena/agent_components/llms/gemini_llm.py',
                    'aciarena/evaluation/math_verifier_worker.py', 'aciarena/evaluation/recorded_suite.py',
                    'aciarena/evaluation/code_verifier_worker.py',
+                   'aciarena/evaluation/normalizers.py', 'aciarena/mas/crewai/schemas.py',
                    'aciarena/evaluation/configuration.py',
                    'aciarena/utils/factory.py', 'aciarena/agent_components/base_agent.py', 'aciarena/mas/base_mas.py']
         config = {'model': public_config(model), 'judge': public_config(self.judge_config),
@@ -198,7 +204,7 @@ class RecordedTaskExecutor:
                   'dependency_lock_hash': file_hash('requirements.lock'),
                   'sources': {path: file_hash(path) for path in sources},
                   'dependencies': {name: version(name) for name in ['openai', 'google-genai', 'math-verify', 'human_eval']},
-                  'normalizer': 'identity-v1/existing-verifier-extraction', 'max_turn': 1,
+                  'normalizer': NORMALIZER_VERSION, 'max_turn': 1,
                   'utility_verifier': self.utility_verifier_version, 'seed_support': 'unverified',
                   'usage_policy': 'Agent+Judge SDK method invocations; unavailable usage=null',
                   'retry_policy': 'explicit-only/transient-provider/max-3-attempts-v1'}
@@ -245,7 +251,20 @@ class RecordedTaskExecutor:
 
     def _attempt(self, identity, attempt_no, spec, model, task):
         started, clock = utc_now(), time.monotonic()
-        trace = RunTrace(self.writer, identity.deterministic_id(), attempt_no, spec, self.stop)
+        started_datetime = datetime.fromisoformat(started)
+
+        def attempt_now():
+            elapsed = max(0.0, time.monotonic() - clock)
+            return (started_datetime + timedelta(seconds=elapsed)).isoformat()
+
+        trace = RunTrace(
+            self.writer,
+            identity.deterministic_id(),
+            attempt_no,
+            spec,
+            self.stop,
+            now=attempt_now,
+        )
         task = copy.deepcopy(task)
         result = None
         status, error_type, error_message = 'success', None, None
@@ -273,14 +292,21 @@ class RecordedTaskExecutor:
             trace.profiles(mas, originals)
             for name, agent in mas.agents.items():
                 trace.attach_agent(name, agent)
-            result = mas.run(task.get_query())
-            if not isinstance(result, dict) or not isinstance(result.get('response'), str):
-                raise ProtocolError('MAS must return a string response')
-            if trace.final_output is None or result['response'] != trace.final_output:
-                raise ProtocolError('Response must originate from Finalizer')
-            # G0 preserves raw text; existing task verifiers retain extraction.
-            result = {**result, 'raw_response': result['response'], 'response_agent': 'finalizer',
-                      'query': task.get_query(), 'ground_truth': task.get_gt()}
+            candidate = mas.run(task.get_query())
+            required = {'raw_response', 'response', 'response_agent', 'conversation', 'status'}
+            if not isinstance(candidate, dict) or set(candidate) != required:
+                raise ProtocolError('MAS must return the standard result contract')
+            if (not isinstance(candidate['raw_response'], str)
+                    or not isinstance(candidate['response'], str)
+                    or not isinstance(candidate['conversation'], list)
+                    or candidate['status'] != 'success'):
+                raise ProtocolError('MAS returned invalid result field types or status')
+            if candidate['response'] != normalize_response(candidate['raw_response']):
+                raise ProtocolError('MAS response does not match the configured normalizer')
+            if (trace.final_output is None or candidate['raw_response'] != trace.final_output
+                    or candidate['response_agent'] != 'finalizer'):
+                raise ProtocolError('Raw response must originate from Finalizer')
+            result = {**candidate, 'query': task.get_query(), 'ground_truth': task.get_gt()}
             task.set_answer(result)
             attack.set_answer(result)
             attack.set_turn(2)  # Legacy bootstrap + one pipeline turn convention.
@@ -334,12 +360,14 @@ class RecordedTaskExecutor:
                            attack_category=spec.attack_category if spec else None, attack_goal=spec.goal if spec else None,
                            attack_surface=spec.surface if spec else None, malicious_agent=spec.target if spec else None,
                            payload_hash=spec.payload_hash if spec else None, target_invoked=trace.target_invoked,
-                           payload_injected=trace.payload_injected, raw_response=trace.final_output,
-                           response=trace.final_output, response_agent='finalizer' if trace.final_output is not None else None,
+                           payload_injected=trace.payload_injected,
+                           raw_response=result['raw_response'] if result is not None else trace.final_output,
+                           response=result['response'] if result is not None else None,
+                           response_agent=result['response_agent'] if result is not None else None,
                            ground_truth=task.get_gt(), **evaluations, status=status, error_type=error_type,
                            error_message=error_message, llm_call_count=trace.call_count, prompt_tokens=trace.prompt_tokens,
                            completion_tokens=trace.completion_tokens, latency_ms=(time.monotonic() - clock) * 1000,
-                           started_at=started, finished_at=utc_now())
+                           started_at=started, finished_at=attempt_now())
         self.writer.append_run(record)
         return record
 

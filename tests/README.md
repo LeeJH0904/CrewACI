@@ -1,4 +1,31 @@
-# G0 검증 기록
+# Gate 검증 기록
+
+## G1: Sequential 반환 계약·normalizer (2026-09-09)
+
+성공 반환을 다섯 필드(`raw_response`, `response`, `response_agent`, `conversation`,
+`status`)로 고정하고, strict schema로 type과 Finalizer source를 검사한다. mock에서
+Solver→Reviewer→Finalizer 각 1회, 모든 `run_step()` pre/post hook, 원문·초안·검토
+context, 네 conversation route를 확인했다.
+
+`text-envelope-v1`은 BOM·CRLF/CR·양끝 공백만 정규화하고 code fence·설명·공격
+문자열은 보존한다. recorded executor에서 Finalizer 원문이 `raw_response`/final
+message에 남고 정규화된 `response`가 verifier에 전달되며 config에 version이
+기록되는지 확인했다. API 호출은 없다.
+
+```bash
+.aciarena/bin/python -m unittest tests.unit.test_normalizers -v
+.aciarena/bin/python -m unittest tests.integration.test_g1_sequential_contract -v
+.aciarena/bin/python -m unittest \
+  tests.integration.test_recorded_executor.RecordedExecutorTests.test_raw_output_is_preserved_and_normalized_output_reaches_verifier -v
+```
+
+G1 회귀 중 WSL wall clock 역행에 따른 timestamp 범위 오류를 재현해 attempt 시작
+UTC+monotonic 경과시간으로 기록하도록 수정했다. G2의 Math/Code·공격 혼합 golden,
+전체 공격/저장 audit를 대신하지 않는다.
+
+전체 회귀는 unit 54개, G1 전용 1개, recorded executor 20개, 기존 G0 9개로
+**누적 84개 통과**했다. 기존 G0 HumanEval 9개는 로컬 IPC가 허용된 환경에서
+재실행했으며 실제 모델 API 호출은 0회다.
 
 ## 일곱 번째 작업: 설정·Judge·의존성 동결 (2026-09-08)
 
@@ -156,5 +183,5 @@ transformers 4.56.1이다. 이 목록은 환경 관측 기록이며 dependency l
 
 ## 다음 작업
 
-G0는 완료됐다. 다음은 G1 표준 반환 계약·normalizer이며, 전체 matrix/coverage
-audit는 단계표에 따라 G2/G6에서 수행한다.
+G0와 G1은 완료됐다. 다음은 G2 공격·저장 Gate이며, 전체 matrix/coverage audit는
+단계표에 따라 G2/G6에서 수행한다.

@@ -74,7 +74,30 @@
 - **D25 — dependency lock:** 검증 환경의 93개 package를 `requirements.lock`에 exact pin하고, 필수 runtime dependency의 설치 버전을 시작 전에 대조한다. google-genai는 2.8.0으로 pin한다. 이 lock은 현재 Linux/Python 3.10 검증 환경의 재현 artifact다.
 - **Gate 판정:** G0의 기준본·다섯 기반 문제·회귀·공통 계약·대표 공격·설정·예산 기록을 충족해 G0 완료로 판정한다. 전체 matrix/coverage audit는 `00`의 단계표에 따라 G2/G6에서 수행한다.
 
-## 3. 대기 중 결정 (개발 착수 전/중 확정)
+## 3. G1 개발 결정
+
+### G1 Sequential 반환·정규화 계약 — 2026-09-09 구현 결정
+
+- **D26 — 반환 계약:** 성공한 `crewai_seq_nodeleg` 실행은
+  `raw_response`, `response`, `response_agent`, `conversation`, `status`의 다섯 필드를
+  엄격한 schema로 반환한다. `conversation`은 user→solver→reviewer→finalizer→user의
+  실제 네 전달을 순서대로 보존하고, 원본 최종 출력과 source는 Finalizer로 고정한다.
+  실행 오류는 성공 객체로 치환하지 않고 기존 recorded executor가 partial trace와
+  오류 RunRecord로 마감한다.
+- **D27 — normalizer:** `text-envelope-v1`은 UTF-8 BOM, CRLF/CR 줄바꿈, 양끝 공백만
+  정규화한다. 내부 공백·설명·Markdown fence·공격 증거는 변경하거나 추출하지 않는다.
+  Math/Code 답 추출은 고정 verifier 책임으로 유지하며 원문은 `raw_response`에 그대로
+  저장한다. normalizer ID와 source hash는 run config hash에 포함한다.
+- **운영 보정:** G1 회귀 중 WSL 시스템 UTC가 뒤로 보정돼 attempt 메시지 시각이 시작
+  시각보다 앞서는 간헐 오류를 재현했다. 각 attempt의 최초 UTC에 monotonic 경과시간을
+  더해 메시지·종료 시각을 생성하도록 수정했다. 지표·범위·실험 조건은 바뀌지 않는다.
+- **영향:** VQ1의 Sequential 순서·context·최종 source와 `00` §1.2/§5.1,
+  `03` §3, `04` §1/§3, `05` G1 Gate. G2에서 Math/Code·공격 혼합 golden과 전체
+  공격/저장 audit를 추가한다.
+- **증거:** `tests/integration/test_g1_sequential_contract.py`,
+  `tests/unit/test_normalizers.py`, recorded executor 정규화 경계 테스트.
+
+## 4. 대기 중 결정 (개발 착수 전/중 확정)
 
 | ID | 질문 | 선택지·비고 | 막는 것 | 목표 시점 |
 |---|---|---|---|---|
@@ -85,7 +108,7 @@
 
 ---
 
-## 4. Hierarchical 진행 결정 (G4)
+## 5. Hierarchical 진행 결정 (G4)
 
 ⏭ **예정된 결정.** Sequential의 계약·공격·저장 검증과 공식 대조·소규모 파일럿을 마친 **G4**(본 matrix 시작 전)에서 진행/미진행/보류를 결정한다.
 

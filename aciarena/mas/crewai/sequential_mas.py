@@ -5,6 +5,8 @@ from aciarena.mas.crewai.agents import (
     FinalizerAgent,
 )
 from aciarena.utils.factory import register_mas
+from aciarena.evaluation.normalizers import normalize_response
+from aciarena.mas.crewai.schemas import ConversationEntry, SequentialSuccessResult
 
 
 @register_mas("crewai_seq_nodeleg")
@@ -41,6 +43,17 @@ class CrewAISequentialNoDelegation(BaseMAS):
                 message=message,
             )
 
+    @staticmethod
+    def _append_conversation(args, *, turn, sender, receiver, phase, content):
+        entry = ConversationEntry(
+            turn=turn,
+            sender=sender,
+            receiver=receiver,
+            phase=phase,
+            content=content,
+        )
+        args["conversation"].append(entry.model_dump())
+
     def bootstrap(self, query):
         self._log_step(
             sender="user",
@@ -48,19 +61,15 @@ class CrewAISequentialNoDelegation(BaseMAS):
             message=query,
         )
 
-        args = {
-            "query": query,
-            "edges": [
-                {
-                    "turn": 0,
-                    "source": "user",
-                    "target": "solver",
-                    "channel": "comm",
-                    "event_type": "task",
-                    "payload": query,
-                }
-            ],
-        }
+        args = {"query": query, "conversation": []}
+        self._append_conversation(
+            args,
+            turn=0,
+            sender="user",
+            receiver="solver",
+            phase="task",
+            content=query,
+        )
 
         return args, False
 
@@ -75,16 +84,13 @@ class CrewAISequentialNoDelegation(BaseMAS):
             message=solver_output,
         )
 
-        args["solver_output"] = solver_output
-        args["edges"].append(
-            {
-                "turn": 1,
-                "source": "solver",
-                "target": "reviewer",
-                "channel": "comm",
-                "event_type": "context",
-                "payload": solver_output,
-            }
+        self._append_conversation(
+            args,
+            turn=1,
+            sender="solver",
+            receiver="reviewer",
+            phase="context",
+            content=solver_output,
         )
 
         reviewer_input = (
@@ -103,16 +109,13 @@ class CrewAISequentialNoDelegation(BaseMAS):
             message=reviewer_output,
         )
 
-        args["reviewer_output"] = reviewer_output
-        args["edges"].append(
-            {
-                "turn": 2,
-                "source": "reviewer",
-                "target": "finalizer",
-                "channel": "comm",
-                "event_type": "review",
-                "payload": reviewer_output,
-            }
+        self._append_conversation(
+            args,
+            turn=2,
+            sender="reviewer",
+            receiver="finalizer",
+            phase="review",
+            content=reviewer_output,
         )
 
         finalizer_input = (
@@ -133,19 +136,27 @@ class CrewAISequentialNoDelegation(BaseMAS):
             message=final_output,
         )
 
-        args["response"] = final_output
-        args["edges"].append(
-            {
-                "turn": 3,
-                "source": "finalizer",
-                "target": "user",
-                "channel": "comm",
-                "event_type": "final",
-                "payload": final_output,
-            }
+        self._append_conversation(
+            args,
+            turn=3,
+            sender="finalizer",
+            receiver="user",
+            phase="final",
+            content=final_output,
         )
+        args["raw_response"] = final_output
+        args["response"] = normalize_response(final_output)
+        args["response_agent"] = "finalizer"
+        args["status"] = "success"
 
         return args, True
 
     def conclude(self, args):
-        return args
+        result = SequentialSuccessResult(
+            raw_response=args["raw_response"],
+            response=args["response"],
+            response_agent=args["response_agent"],
+            conversation=args["conversation"],
+            status=args["status"],
+        )
+        return result.model_dump()

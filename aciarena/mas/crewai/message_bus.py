@@ -17,9 +17,10 @@ class ProtocolError(ValueError):
 
 
 class RunTrace:
-    def __init__(self, writer, run_id, attempt_no, spec, stop):
+    def __init__(self, writer, run_id, attempt_no, spec, stop, *, now=utc_now):
         self.writer, self.run_id, self.attempt_no = writer, run_id, attempt_no
         self.spec, self.stop = spec, stop
+        self.now = now
         self.attack_id = spec.attack_id if spec else 'none'
         self.target_invoked = False if spec else None
         self.payload_injected = False if spec else None
@@ -39,7 +40,7 @@ class RunTrace:
         record = MessageRecord(run_id=self.run_id, attempt_no=self.attempt_no,
                                seq=len(self.messages) + 1, sender=sender, receiver=receiver,
                                phase=phase, content=content, original_content=original,
-                               is_attacked=attacked, attack_id=self.attack_id, created_at=utc_now())
+                               is_attacked=attacked, attack_id=self.attack_id, created_at=self.now())
         try:
             self.writer.append_message(record)
         except (StorageError, OSError) as exc:

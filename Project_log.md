@@ -1,3 +1,28 @@
+## 2026-09-09 — G1: Sequential 반환 계약·고정 normalizer
+
+- **반환 계약:** `CrewAISequentialNoDelegation`이 성공 시
+  `raw_response`·정규화 `response`·`response_agent=finalizer`·순서가 있는
+  `conversation`·`status=success`를 직접 반환하도록 변경. Pydantic strict schema로
+  extra/type/source 오류를 실행 경계에서 거부한다.
+- **순서·context:** bootstrap은 상태 초기화만 수행하고 한 step에서
+  Solver→Reviewer→Finalizer를 각 1회 `run_step()`으로 호출한다. 대화에는
+  user→solver task, solver→reviewer context, reviewer→finalizer review,
+  finalizer→user final을 보존한다.
+- **정규화:** `text-envelope-v1`을 추가해 BOM·CRLF/CR·양끝 공백만 정리한다.
+  내부 내용·code fence·설명·공격 문자열은 보존하며, Finalizer 원문은 별도
+  `raw_response`와 final message로 유지한다. recorded executor는 정규화된 값만
+  task/attack verifier에 전달하고 normalizer version/source를 config hash에 포함한다.
+- **간헐 시각 오류 수정:** 회귀 실행 중 WSL wall clock 역행으로 message timestamp가
+  attempt 범위를 벗어나던 오류를 재현했다. 시작 UTC에 monotonic 경과시간을 더해 한
+  attempt 안의 message/finished timestamp가 역행하지 않게 했다.
+- **검증:** unit 54개·G1 전용 1개·recorded executor 20개·기존 G0 회귀 9개,
+  누적 84개를 통과했다. normalizer 경계·버전 불일치·잘못된 MAS 계약·monotonic
+  timestamp 회귀를 포함한다. manifest 검사, compileall, `git diff --check`도 통과했고
+  실제 모델 API 호출은 없다. Math/Code golden·전체 matrix/coverage audit의 G2 완료
+  판정은 별도다.
+- **Gate:** G1의 순서·context·Finalizer source·표준 반환 계약 mock 조건을 충족했다.
+  다음 단계는 G2 공격·저장 Gate와 domain별 normalizer golden/audit다.
+
 ## 2026-09-08 — G0 일곱 번째 작업: 설정·Judge·의존성 동결 및 G0 완료
 
 - **단일 설정 진입점:** `configs/experiments/core.yaml`을 G0 개발 계약 v1로 추가. `model.yaml`·`judge.yaml`을 참조하며 복제하지 않는다. 활성 MAS·domain, 로컬 Bionic 정책, paid API 예산 0, max turn 1, 재시도, Judge, verifier, 예정 run 수와 dependency lock을 한 곳에서 검사한다.

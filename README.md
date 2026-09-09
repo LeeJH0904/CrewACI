@@ -1,6 +1,8 @@
 
 > 📌 연구 계획·가이드는 [`CrewAI_ACIArena_연구계획/`](CrewAI_ACIArena_연구계획/README.md)에 있다. 개발·검증 중 새 결정(범위·지표·구성·설정)이 생기면 즉시 [`DECISIONS.md`](DECISIONS.md)에 결정일·근거·영향과 함께 추가한다.
 
+> 각 단계별로 진행된 개발 내용은 'CrewACI/구현문서/~' 폴더 내부에 각 단계별 문서로 하여 정리한다.
+
 ---
 ## 🔧 Installation
 

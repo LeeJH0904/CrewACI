@@ -99,6 +99,79 @@ class RecordedExecutorTests(unittest.TestCase):
         self.assertEqual(len(self.calls), count)
         self.assertTrue(executor.writer.audit()['ok'])
 
+    def test_raw_output_is_preserved_and_normalized_output_reaches_verifier(self):
+        observed = []
+
+        def verifier(task):
+            observed.append(copy.deepcopy(task.answer))
+            return True
+
+        executor = RecordedTaskExecutor(
+            self.args(),
+            JUDGE,
+            utility_verifier=verifier,
+            utility_verifier_version='g1-mock-v1',
+        )
+        self.outputs['finalizer'] = ' \ufeff320\r\n '
+        record = self.run_task(executor)
+
+        self.assertEqual(record.raw_response, ' \ufeff320\r\n ')
+        self.assertEqual(record.response, '320')
+        self.assertEqual(observed[0]['raw_response'], record.raw_response)
+        self.assertEqual(observed[0]['response'], record.response)
+        final = [event for event in self.messages(executor) if event['phase'] == 'final']
+        self.assertEqual(final[-1]['content'], record.raw_response)
+        config = json.loads(next((executor.writer.directory / 'configs').glob('*.json')).read_text())
+        self.assertEqual(config['normalizer'], 'text-envelope-v1')
+        self.assertTrue(executor.writer.audit()['ok'])
+
+    def test_attempt_timestamps_use_one_monotonic_clock(self):
+        executor = self.executor()
+        with patch(
+            'aciarena.evaluation.recorded_executor.utc_now',
+            return_value='2099-01-01T00:00:00+00:00',
+        ):
+            record = self.run_task(executor)
+
+        self.assertGreaterEqual(record.finished_at, record.started_at)
+        for event in self.messages(executor):
+            self.assertGreaterEqual(event['created_at'], record.started_at)
+            self.assertLessEqual(event['created_at'], record.finished_at)
+        self.assertTrue(executor.writer.audit()['ok'])
+
+    def test_invalid_mas_contract_is_a_protocol_error_with_raw_trace(self):
+        executor = self.executor()
+        with patch(
+            'aciarena.mas.crewai.sequential_mas.CrewAISequentialNoDelegation.conclude',
+            return_value={
+                'raw_response': '320',
+                'response': 'not-the-normalized-response',
+                'response_agent': 'finalizer',
+                'conversation': [],
+                'status': 'success',
+            },
+        ):
+            record = self.run_task(executor)
+
+        self.assertEqual(record.status, 'protocol_error')
+        self.assertEqual(record.error_type, 'ProtocolError')
+        self.assertEqual(record.raw_response, '320')
+        self.assertIsNone(record.response)
+        self.assertIsNone(record.response_agent)
+        self.assertTrue(executor.writer.audit()['ok'])
+
+    def test_normalizer_version_mismatch_is_rejected_before_execution(self):
+        with self.assertRaisesRegex(ValueError, 'normalizer and implementation'):
+            RecordedTaskExecutor(
+                self.args(),
+                JUDGE,
+                experiment_contract={
+                    'contract_id': 'mismatched-test',
+                    'normalizer': 'future-normalizer-v2',
+                },
+            )
+        self.assertEqual(self.calls, [])
+
     def test_all_three_attack_surfaces_are_observed_and_next_run_is_clean(self):
         cases = [('disclosure', 'disclosure_math_location.instruction.v1', 'instruction'),
                  ('disclosure', 'disclosure_math_name.agent.v1', 'agent'),

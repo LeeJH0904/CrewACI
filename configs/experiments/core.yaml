@@ -13,6 +13,7 @@ model_policy: bionic-local-development
 final_benchmark_ready: false
 paid_api_budget_usd: 0
 max_turn: 1
+normalizer: text-envelope-v1
 retry_policy:
   provider_requests_per_attempt: 1
   max_recorded_attempts: 3

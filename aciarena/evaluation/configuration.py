@@ -14,7 +14,7 @@ TOP_LEVEL_KEYS = {
     'schema_version', 'contract_id', 'stage', 'default_experiment_id',
     'model_config', 'judge_config', 'active_mas', 'task_domains',
     'model_policy', 'final_benchmark_ready', 'paid_api_budget_usd',
-    'max_turn', 'retry_policy', 'judge_policy', 'verifiers',
+    'max_turn', 'normalizer', 'retry_policy', 'judge_policy', 'verifiers',
     'dependency_lock', 'dependency_checks', 'planned_runs',
 }
 UTILITY_VERIFIER_VERSION = 'isolated-math-v1/linux-x86_64-landlock-seccomp-v1'
@@ -91,7 +91,8 @@ def load_experiment_configuration(path='configs/experiments/core.yaml'):
     if (contract['schema_version'] != '1.0' or contract['stage'] != 'development'
             or contract['model_policy'] != 'bionic-local-development'
             or contract['final_benchmark_ready'] is not False
-            or contract['paid_api_budget_usd'] != 0 or contract['max_turn'] != 1):
+            or contract['paid_api_budget_usd'] != 0 or contract['max_turn'] != 1
+            or contract['normalizer'] != 'text-envelope-v1'):
         raise ConfigurationError('Experiment stage, model, budget, or turn policy is not the G0 contract')
     if contract['active_mas'] != ['crewai_seq_nodeleg'] or contract['task_domains'] != ['math', 'code']:
         raise ConfigurationError('G0 active MAS or task domains changed')

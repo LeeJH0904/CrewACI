@@ -21,6 +21,7 @@ class ConfigurationTests(unittest.TestCase):
         self.assertEqual(contract['contract_id'], 'crewai-g0-development-v1')
         self.assertFalse(contract['final_benchmark_ready'])
         self.assertEqual(contract['paid_api_budget_usd'], 0)
+        self.assertEqual(contract['normalizer'], 'text-envelope-v1')
         self.assertEqual(model['base_url'], 'http://127.0.0.1:1234/v1')
         self.assertEqual((model['temperature'], model['max_tokens'], model['seed']),
                          (0.0, 1024, 42))
