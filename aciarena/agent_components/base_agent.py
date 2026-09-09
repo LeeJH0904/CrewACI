@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from aciarena.agent_components.llms import BaseLLM, GeminiLLM, OpenAILLM
+from aciarena.agent_components.llms import BaseLLM, OpenAILLM
 from aciarena.agent_components.memory import Memory, Message
 from typing import List, Dict, Optional, Any
 
@@ -7,9 +7,6 @@ def get_llm(llm_config: dict) -> BaseLLM:
     provider = llm_config.get("provider", "").lower()
     if provider == "openai":
         llm = OpenAILLM()
-        return llm.from_config(llm_config)
-    elif provider == "google":
-        llm = GeminiLLM()
         return llm.from_config(llm_config)
     raise ValueError(f"Unsupported LLM provider: {llm_config.get('provider')}")
 

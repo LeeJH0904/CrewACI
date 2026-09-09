@@ -33,7 +33,6 @@ verifiers:
 dependency_lock: ../../requirements.lock
 dependency_checks:
   - openai
-  - google-genai
   - pydantic
   - tenacity
   - PyYAML

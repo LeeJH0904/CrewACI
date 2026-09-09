@@ -92,13 +92,10 @@ class RunTrace:
 
     def attach_llm(self, name, llm, judge=False):
         from aciarena.agent_components.llms.openai_llm import OpenAILLM
-        from aciarena.agent_components.llms.gemini_llm import GeminiLLM
 
         sdk_owner, sdk_method = None, None
         if isinstance(llm, OpenAILLM):
             sdk_owner, sdk_method = llm.client.chat.completions, 'create'
-        elif isinstance(llm, GeminiLLM):
-            sdk_owner, sdk_method = llm.client.models, 'generate_content'
         if sdk_owner is not None:
             sdk_call = getattr(sdk_owner, sdk_method)
 

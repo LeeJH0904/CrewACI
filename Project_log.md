@@ -1,3 +1,19 @@
+## 2026-09-09 — Gemini 지원·의존성 잔여 완전 정리
+
+- **패키지 메타데이터:** 추적 중인 `aciarena.egg-info/requires.txt`의
+  `google-genai` 의존성과 `SOURCES.txt`의 삭제된 `gemini_llm.py` 경로를
+  제거했다. `importlib.metadata.requires("aciarena")`로 현재 메타데이터에
+  OpenAI 경로의 의존성만 남았음을 확인했다.
+- **로컬 환경:** `.aciarena` 가상환경에서 `google-genai 2.8.0`을
+  uninstall하고 삭제된 모듈의 `gemini_llm*.pyc` cache를 제거했다.
+  `google-auth`는 D25에 따라 독립 전이 의존성으로 보존한다.
+- **문서 정합성:** `tests/README.md`와 `구현문서/G0_구현_기록.md`의
+  현재형 의존성 설명을 갱신했다. 과거 도입 이력과 기존 실행
+  config snapshot은 이력·재현 증거로 보존했다.
+- **검증:** `google-genai` 미설치, `pip check` 성공, manifest·compileall·
+  `git diff --check` 통과. unit 54개, G1/recorded integration 21개,
+  G0 회귀 9개를 합한 **누적 84개 통과**. 실제 모델 API 호출은 없다.
+
 ## 2026-09-09 — G1: Sequential 반환 계약·고정 normalizer
 
 - **반환 계약:** `CrewAISequentialNoDelegation`이 성공 시

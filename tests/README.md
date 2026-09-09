@@ -177,9 +177,11 @@ Code 검증은 기존 HumanEval의 자식 프로세스와 로컬 IPC 소켓을 �
 ## 실행 환경
 
 Python 3.10.12, Linux 6.18.33.2-microsoft-standard-WSL2.
-주요 설치 버전은 openai 1.63.2, google-genai 2.8.0, pydantic 2.10.6,
-tenacity 9.0.0, PyYAML 6.0.2, math-verify 0.6.0, human_eval 1.0.3,
-transformers 4.56.1이다. 이 목록은 환경 관측 기록이며 dependency lockfile은 아니다.
+주요 설치 버전은 openai 1.63.2, pydantic 2.10.6, tenacity 9.0.0,
+PyYAML 6.0.2, math-verify 0.6.0, human_eval 1.0.3, transformers 4.56.1이다.
+2026-09-09 Gemini 경로 제거와 함께 `google-genai` 설치·패키지 메타데이터·
+bytecode cache를 정리했다. 이 목록은 환경 관측 기록이며 dependency
+lockfile은 아니다.
 
 ## 다음 작업
 

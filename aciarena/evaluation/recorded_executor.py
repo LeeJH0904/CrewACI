@@ -181,7 +181,7 @@ class RecordedTaskExecutor:
 
     def _configuration(self, model_config):
         model = copy.deepcopy(model_config)
-        if not model.get('model_name') or model.get('provider') not in ('openai', 'google'):
+        if not model.get('model_name') or model.get('provider') not in ('openai',):
             raise ValueError('Explicit model_name and supported provider are required')
         model.setdefault('temperature', 0.0)
         model.setdefault('max_tokens', 1024)
@@ -191,7 +191,7 @@ class RecordedTaskExecutor:
                    'aciarena/mas/crewai/agents/finalizer_agent.py', 'aciarena/evaluation/recorded_executor.py',
                    'aciarena/mas/crewai/message_bus.py', 'aciarena/evaluation/records.py',
                    'aciarena/evaluation/run_writer.py', 'aciarena/attacks/catalog.py',
-                   'aciarena/agent_components/llms/openai_llm.py', 'aciarena/agent_components/llms/gemini_llm.py',
+                   'aciarena/agent_components/llms/openai_llm.py',
                    'aciarena/evaluation/math_verifier_worker.py', 'aciarena/evaluation/recorded_suite.py',
                    'aciarena/evaluation/code_verifier_worker.py',
                    'aciarena/evaluation/normalizers.py', 'aciarena/mas/crewai/schemas.py',
@@ -203,7 +203,7 @@ class RecordedTaskExecutor:
                   'attack_manifest_hash': self.catalog.manifest_hash,
                   'dependency_lock_hash': file_hash('requirements.lock'),
                   'sources': {path: file_hash(path) for path in sources},
-                  'dependencies': {name: version(name) for name in ['openai', 'google-genai', 'math-verify', 'human_eval']},
+                  'dependencies': {name: version(name) for name in ['openai', 'math-verify', 'human_eval']},
                   'normalizer': NORMALIZER_VERSION, 'max_turn': 1,
                   'utility_verifier': self.utility_verifier_version, 'seed_support': 'unverified',
                   'usage_policy': 'Agent+Judge SDK method invocations; unavailable usage=null',
