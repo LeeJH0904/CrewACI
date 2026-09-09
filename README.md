@@ -145,11 +145,11 @@ python benchmark.py --mas sc [--task_domain math] [--max_workers 1]
 # [] 내부 옵션은 생략 가능 옵션임. 실제 사용 시에는 [] 제거 후 사용 
 
 # 실행
-.aciarena/bin/python benchmark.py --mas crewai_seq_nodeleg --suite benign [--task_domain math] [--limit 1] [--experiment_id smoke] [--output_dir logs]
+.aciarena/bin/python benchmark.py --mas crewai_seq_nodeleg --suite benign [--task_domain math] [--limit 1] [--experiment_id test1] [--output_dir logs]
 
 
 # 공격 실행 — --suite 와 일치하는 --attack_ids 를 함께 명시
-.aciarena/bin/python benchmark.py --mas crewai_seq_nodeleg --suite hijacking --task_domain math --attack_ids hijacking_answer_mapping.agent.v1 [--limit 1] [--experiment_id smoke] [--output_dir logs]
+.aciarena/bin/python benchmark.py --mas crewai_seq_nodeleg --suite hijacking --task_domain math --attack_ids hijacking_answer_mapping.agent.v1 [--limit 1] [--experiment_id test1] [--output_dir logs]
 
 ```
 

@@ -18,6 +18,9 @@
 | D15 | **참조 문서 정리**: 선행연구조사·논문_구현_비교·ACIARENA 원논문·MASLab 논문을 `ACIArena_관련_문서/`에 확보하고 가이드 링크 정정. `ACIArena_요약`·`CrewAI_통합_평가`·`CrewAI_대표성_및_재구현_설계`는 내용 중복으로 별도 파일 미유지(통합_정리로 병합). | ✅ | 2026-09-07 | 깨진 참조 해소, 자료 중복 제거 | `01`§2, `06`§2, `통합_정리`§6 |
 | SCOPE-1 | **완료 기준 우선순위**: `통합_정리`(2026-08-05) §4.8의 광의 완료 기준(seq+hier·delegation·manager 포함)이 아니라, `archive/`(특히 05)·`00`의 축소 기준을 확정 기준으로 한다. delegation·hierarchical·manager는 G4 승인 시에만 적용. | ✅ | 2026-09-07 | 신청서 대비 범위 축소 결정 반영 | `05`, `00`§7, `통합_정리`§4.8 |
 | IMPL-A | **G0 기준본 수정 방침**: A1(mutable default)·A4(중복 `AnswerMappingAgent`)는 즉시 수정 완료. A2(공유 attack 경합)는 run별 `deepcopy` **최소 수정**으로 경합만 차단하고 catalog/factory 정공법은 개발 단계로 이월. A3(로거 격리)·A5(오류 RunRecord)는 C절(기록 계층) 구축 시 함께 처리. | ✅ | 2026-09-07 | 동기화 단계는 정합·안전 확보에 집중, 큰 구현은 개발 단계로 분리 | `00`§2, 코드(`base_agent`/`base_mas`/`task_executor`/`hijacking_attack`) |
+| D28 | **도메인 범위 = math/code 확정** (science·medicine 제외). CrewAI recorded·legacy 비교 모두 math/code로 한정한다. | ✅ | 2026-09-09 | 공개 upstream(`3f226a4`)에 sci/medicine용 공격이 미등록 — hijacking sci/med는 0개라 `build_attacks`가 실행 에러, exfiltration은 generic 1개뿐이라 커버리지 공백. math/code는 3 suite 모두 동작하고 Disruption 585는 논문과 정확 일치. sci/medicine 확장은 legacy·CrewAI 양쪽에 공격 신설이 필요한 별도 범위 | `00`§3, README, `catalog.py`/`configuration.py`의 `('math','code')` |
+| D29 | **공격 목표 = 3종 전부 유지** (Hijacking·Disruption·Exfiltration). Disruption 단독 축소는 하지 않는다. | ✅ | 2026-09-09 | ACI는 정의상 3목표. Disruption만 남기면 (a) 표면이 message 1종으로 붕괴 (b) LLM judge 의존 suite만 남아 재현 신뢰도 최저 (c) 신청서 표면·역할 기여 소멸. 문자열 매칭 suite(Hijacking/Exfiltration)가 오히려 비교에 유리 | `00`§3, 신청서 실용적 기여 |
+| D31 | **legacy baseline = bug-fixed 로컬 버전** (`AnswerMapping` 중복 등록 제거 유지). upstream의 dup(hijacking_math 이중 카운트)을 재도입하지 않는다. | ✅ | 2026-09-09 | D30에서 논문 exact parity를 추구하지 않기로 했으므로, 이중 카운트 버그가 없는 더 올바른 버전을 기준으로 삼는다. dup 제거의 hijacking_math 수치 영향은 방향과 함께 보고 | IMPL-A(A4), `00`§7, `hijacking_attack.py` |
 
 ---
 
@@ -116,3 +119,24 @@
 - 보류는 자동 승인이 아니며, 본 matrix 동결 전 활성 구성 목록을 확정한다.
 - 미진행 시 RQ2를 수행하지 않고 Sequential 단독으로 범위를 확정한다(신청서 대비 미수행 범위 명시).
 - 결정 시 결정일·근거·예상 비용·영향 RQ를 이 문서에 추가한다.
+
+---
+
+## 6. Cross-MAS 비교 및 G7 결정 (2026-09-09)
+
+CrewAI recorded 경로와 기존 legacy MAS 경로의 평가 비대칭 정리(`구현문서/CrewAI와_기존_MAS_동작_비대칭_정리.md`)에 근거한 비교 전략과 단계 편성 결정이다. 도메인·공격 목표 확정은 D28·D29를 따른다.
+
+### D30 — 비교 기준 = 자체 재실행 (논문은 정성 참조)
+
+- **결정:** CrewAI와 bug-fixed legacy 7종을 **동일 조건**(GPT-4o-mini, 동일 math/code 태스크, 동일 공격 세트, 동일 judge config)으로 재실행하고, **공통 집계기가 양쪽 원본 row에서 같은 규칙**으로 BU·UA·ASR·ASR_Surface를 재계산한다. 헤드라인 지표는 legacy/논문 의미(단순 평균, 빈 응답=0)로, CrewAI의 unknown/error 분해는 별도 진단으로 병기한다. 논문 Table 1 수치와의 **exact parity는 추구하지 않고 정성 참조**(경향·순위 일치, 차이는 설명)로만 쓴다.
+- **근거:** 비교 타당성은 논문 일치가 아니라 내부 일관성에서 나온다. 논문은 자동 생성 공격·미공개 seed·dup 버그 등 재현 불가 요소가 있어 exact parity가 사실상 불가하며 버그 수정과도 상충한다.
+- **영향:** 신청서 (4)의 "논문 Table 1 직접 대조 재현성 검증"을 exact→정성으로 조정한다. `00`§7 완료 정의, 비대칭 문서 §19·§20.
+
+### D32 — 비대칭 해소 3작업과 G7 신설
+
+- **핵심 3작업:** ① CrewAI manifest/catalog를 math/code 전 공격 세트로 확장(모든 MAS 동일 공격) ② legacy per-row 구조화 기록(CrewAI와 동일 형식 JSONL) ③ 공통 집계기(양쪽 raw를 한 규칙으로 재계산). Disruption은 recorded 경로가 legacy `verify()`(JSON-schema LLM judge)를 이미 재사용하므로 판정 로직 변경 없이 **동일 judge config + judge I/O per-row 기록**으로 충분하다(offline 재판정은 재현성용 선택지이지 필수 아님).
+- **단계 편성:** ①은 **G5**(manifest 동결, CrewAI 자체 matrix에도 이득)에서, ③의 집계기 골격은 **G6**(legacy row 수용 가능하게 확장 설계)에서 심는다. **G7(신설)** = ② legacy per-row + bug-fixed legacy 재실행 + ③ 공통 집계기 완성 + 정성 논문 대조.
+- **완료 정의 재편:** G6 = **CrewAI 독립 벤치 완료**, G7 = **신청서 실용적 기여(기존 6종 대비 CrewAI 위치 제시) 충족**. 즉 "전체 연구 완료"는 G6이 아니라 G7이다.
+- **게이트:** G7은 legacy 7종 × math/code × 3 suite × 전 공격 × GPT-4o-mini로 비용이 크므로 **G4식 파일럿·예산 게이트** 통과 후 착수한다. legacy 실행 견고화(task 예외 시 suite 중단 방지)·config 스냅샷도 G7에 포함한다.
+- **연구 변수(제거 대상 아님):** Agent 수·토폴로지·turn·최종화 역할·전달 context·memory 정책은 같게 만들지 않고 통제·보고한다.
+- **근거·영향:** 비대칭 문서 §19·§20, `00`§6 단계표·§7 완료 정의, 신청서 (4)·실용적 기여.
