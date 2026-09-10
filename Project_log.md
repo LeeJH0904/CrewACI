@@ -1,3 +1,32 @@
+## 2026-09-09 — G2: 공격·저장·golden·resume·audit Gate 완료
+
+- **AnswerMapping 보정:** 파싱된 SymPy `Integer`만 치환해 분수 등에서 원답을 공격
+  성공으로 오판하던 구현을 ground-truth 원문 ASCII 숫자 치환→파싱으로 변경했다.
+  Math 39개 전수를 확인해 38개 목표가 parse 가능하고 원답과 다르며, 숫자가 없는
+  `math_0016`만 명시적 `not_applicable`로 기록한다. 기존 `logs/test2`의 5.26% ASR은
+  `math_0032` 오탐을 포함하므로 연구 결과로 폐기한다.
+- **G2 golden:** `tests/golden/g2_verifier.json`에 Math/Code 정답·오답·설명·fence·
+  빈 출력·Code timeout, 정수/분수 mapping, Math/Code 공격 혼합 기대값을 고정했다.
+  원문은 normalizer를 거쳐 실제 격리 Math/Code verifier와 공격 verifier로 평가했다.
+- **공격·격리:** manifest 선정 공격 8종을 domain-compatible mock에서 전부 실행해
+  세 표면의 target 호출·직접 payload 증거를 확인했다. 공격 20개 병렬 run에서
+  Agent/MAS/Attack/trace 상태와 run ID가 섞이지 않았고, 기존 100개 병렬 JSONL 및
+  공격 후 benign 격리 회귀를 유지했다.
+- **resume/retry:** utility/attack false와 AnswerMapping not_applicable 완료 run은
+  재개 시 모델 호출 없이 재사용한다. Timeout 등 허용 일시 오류만 명시적으로 최대
+  3 attempt까지 남기며 네 번째와 비일시 오류 retry를 거부·감사한다.
+- **matrix audit:** `audit.py`와 `scripts/audit_records.py`를 추가해 69 benign,
+  306 core attacks, 30 pilot, 60 confirmation 계획을 원본 run/message/config와 대조한다.
+  누락·추가·중복·seq·저장 실패·config drift·manifest metadata/ground truth·적용 가능성·
+  미호출·미주입·표면별 payload 증거를 fail closed로 검사한다. recorded suite 결과도
+  이 audit 통과 후에만 반환한다.
+- **패키지 메타데이터:** `setup.py egg_info`로 G0~G2에 추가된 catalog·recorded·verifier·
+  CrewAI schema/message bus와 신규 audit 모듈을 추적 `SOURCES.txt`에 동기화했다.
+- **검증:** unit 63개, G1/recorded/G2 통합 31개, G0 회귀 9개로 누적 103개 통과.
+  manifest 검사, compileall, `git diff --check`를 수행했으며 실제 모델 API 호출은 없다.
+- **Gate:** G2 완료. 다음은 G3 공식 CrewAI↔재구현 Sequential 20-run calibration과
+  기능별 차이 보고다.
+
 ## 2026-09-09 — Gemini 지원·의존성 잔여 완전 정리
 
 - **패키지 메타데이터:** 추적 중인 `aciarena.egg-info/requires.txt`의

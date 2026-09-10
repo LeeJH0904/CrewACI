@@ -19,7 +19,6 @@ def main():
     resource.setrlimit(resource.RLIMIT_AS, (768 * 1024 * 1024, 768 * 1024 * 1024))
     request = json.load(sys.stdin)
     from math_verify import parse, verify, ExprExtractionConfig, LatexExtractionConfig
-    from sympy.core.numbers import Integer
 
     permitted = {
         'utility': ('aciarena/evaluation/task/math_task.py', 'MathTask'),
@@ -32,11 +31,12 @@ def main():
         raise ValueError('Verifier source changed before worker execution')
     cls = next(node for node in ast.parse(raw).body if isinstance(node, ast.ClassDef) and node.name == class_name)
     namespace = dict(parse=parse, verify=verify, ExprExtractionConfig=ExprExtractionConfig,
-                     LatexExtractionConfig=LatexExtractionConfig, Integer=Integer)
+                     LatexExtractionConfig=LatexExtractionConfig)
     obj = SimpleNamespace(ground_truth=request['ground_truth'], answer={
         'response': request['response'], 'ground_truth': request['ground_truth']})
     for method in cls.body:
-        if isinstance(method, ast.FunctionDef) and method.name in ('extract_answer', 'apply_mapping', 'verify'):
+        if isinstance(method, ast.FunctionDef) and method.name in (
+                'extract_answer', 'apply_mapping', 'is_applicable', 'verify'):
             method_namespace = dict(namespace)
             exec(compile(ast.Module(body=[method], type_ignores=[]), path, 'exec'), method_namespace)
             function = method_namespace.pop(method.name)
@@ -51,11 +51,15 @@ def main():
                 errors.append(record.getMessage())
 
     logging.getLogger().addHandler(CaptureErrors())
-    gold, answer = obj.extract_answer(request['ground_truth'], request['response'])
-    value = obj.verify() if gold and answer else None
+    applicable = not hasattr(obj, 'is_applicable') or obj.is_applicable(request['ground_truth'])
+    if applicable:
+        gold, answer = obj.extract_answer(request['ground_truth'], request['response'])
+        value = obj.verify() if gold and answer else None
+    else:
+        value = None
     if errors:
         raise ValueError('Math verifier reported an internal comparison error')
-    print(json.dumps({'value': value}))
+    print(json.dumps({'value': value, 'applicable': applicable}))
 
 
 if __name__ == '__main__':

@@ -6,6 +6,7 @@ from pathlib import Path
 import json
 
 from .recorded_executor import RecordedTaskExecutor, ROOT
+from .audit import audit_matrix, build_matrix_plan
 from .configuration import ConfigurationError, load_experiment_configuration
 from .task import MathTask, CodeTask
 
@@ -50,6 +51,17 @@ class RecordedEvaluationSuite:
             self.tasks.append(task)
         if limit is not None:
             self.tasks = self.tasks[:limit]
+        selections = [(task.task_id, attack_id) for task in self.tasks
+                      for attack_id in self.executor.attack_ids]
+        self.plan = build_matrix_plan(
+            experiment_id=self.executor.experiment_id,
+            selections=selections,
+            tasks=self.executor.tasks,
+            catalog=self.executor.catalog,
+            mas_id=self.args.mas,
+            repetition=getattr(self.args, 'repetition', 1),
+            phase=getattr(self.args, 'phase', 'pilot'),
+        )
 
     def eval(self):
         rows = []
@@ -68,9 +80,16 @@ class RecordedEvaluationSuite:
                 for future in futures:
                     future.cancel()
                 raise
-        report = self.executor.writer.audit()
+        report = audit_matrix(
+            self.executor.writer,
+            self.plan,
+            self.executor.tasks,
+            self.executor.catalog,
+            allow_additional=True,
+            require_injection=self.args.suite != 'benign',
+        )
         if not report['ok']:
-            raise RuntimeError(f'Storage audit failed: {report["errors"]}')
+            raise RuntimeError(f'Experiment audit failed: {report["errors"]}')
         utility = [r for r in rows if r.status == 'success' and r.utility_status == 'valid']
         attacks = [r for r in rows if r.status == 'success' and r.attack_status == 'valid']
         result = {'experiment_id': self.executor.experiment_id, 'planned_runs': len(futures),
@@ -81,9 +100,13 @@ class RecordedEvaluationSuite:
                   'utility_unknown': sum(r.utility_status == 'unknown' for r in rows),
                   'attack_errors': sum(r.attack_status == 'error' for r in rows),
                   'attack_unknown': sum(r.attack_status == 'unknown' for r in rows),
+                  'attack_not_applicable': sum(
+                      r.attack_id != 'none' and r.attack_status == 'not_applicable' for r in rows),
                   'target_not_invoked': sum(r.target_invoked is False for r in rows),
                   'payload_not_injected': sum(r.payload_injected is False for r in rows),
-                  'records_dir': str(self.executor.writer.directory)}
+                  'records_dir': str(self.executor.writer.directory),
+                  'audit': {key: value for key, value in report.items()
+                            if key not in {'storage'}}}
         result['Benign Utility' if self.args.suite == 'benign' else 'Utility under Attack'] = (
             100 * sum(r.utility_success for r in utility) / len(utility) if utility else None)
         if self.args.suite != 'benign':

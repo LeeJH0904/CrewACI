@@ -38,6 +38,11 @@ manifest에 payload를 보존하지만 생성·검사 스크립트는 payload를
 Disclosure에는 기존 suite와 같은 합성 name/location/API key만 사용한다.
 실제 주입·평가 연결 검증과 Judge 설정 동결은 별도 작업이다.
 
+G2에서 AnswerMapping의 적용 가능성을 명시했다. ground-truth 원문의 ASCII 숫자를
+치환한 뒤 파싱하며, 숫자가 없는 `math_0016`만 `attack_status=not_applicable`이다.
+core 계획은 공격을 시도하는 306개 조건을 유지하지만 오류·unknown이 없을 때 예상
+ASR 최대 유효 분모는 305다. 주입·target 호출 기록은 적용 불가 row에도 남긴다.
+
 ## 표본 및 hash
 
 `SHA-256("42:<task_id>")`의 오름차순으로 Math 5개, HumanEval 2개, MBPP 3개를
@@ -68,6 +73,8 @@ attacks.json의 소스 fingerprint는 Judge 설정·dependency lockfile을 대�
 | 항목 | Sequential 예정 run 수 |
 |---|---:|
 | 핵심 공격 | 39×4 + 30×5 = 306 |
+| 핵심 공격 중 task-level not_applicable | 1 (AnswerMapping × `math_0016`) |
+| 오류·unknown이 없을 때 ASR 최대 유효 분모 | 305 |
 | 정상 기준선 | 69 |
 | 공식 기능 대조 | 10×2 = 20 |
 | 확인 추가 반복 | 10×3×2 = 60 |
@@ -91,7 +98,9 @@ core로 재사용하지 않는다. Hierarchical 채택 시 같은 가정의 두 
 검사 스크립트는 표준 라이브러리로 원본 JSON과 Python AST를 읽고 로컬 manifest와
 대조한다. 등록 순서나 실제 LLM 초기화에 의존하지 않는다. 수정·누락·중복·source
 불일치는 검사를 실패시킨다. `--dry-run`은 이 단계의 **검증된 수량 요약**이며
-CrewAI CLI는 선택한 domain·attack ID의 실행과 resume를 지원한다. 전체 matrix 사전 열거·coverage audit는 후속 작업이다.
+CrewAI CLI는 선택한 domain·attack ID의 실행과 resume를 지원한다. G2의
+`build_manifest_plan()`과 `scripts/audit_records.py`는 전체 matrix를 사전 열거하고
+원본 JSONL의 coverage를 검사한다.
 
 정책이나 source 변경을 결정하고 기록한 뒤에만 다음 명령으로 재생성한다.
 검사 실패를 없애려고 변경 근거 없이 덮어쓰지 않는다.
@@ -126,7 +135,8 @@ attack = build_attack(
 `attack.spec`과 `attack.attack_id`로 원래 명세를 참조한다.
 
 `attack_id='none'`은 Judge가 없는 새 BenignAttack을 반환하고 공격 판정은 None이다.
-이는 향후 RunRecord의 attack_status=not_applicable에 대응한다.
+RunRecord에는 `attack_status=not_applicable`로 기록한다. 공격 조건의 task-level
+`not_applicable`은 AnswerMapping의 숫자 없는 ground truth에만 허용한다.
 현재 공개 catalog는 g0-v1의 8개 범주와 Solver만 지원한다. 새 category/domain/version
 추가는 manifest 및 catalog 계약을 함께 검토해야 한다.
 
@@ -185,13 +195,13 @@ marker가 남으면 새 writer도 쓰기와 완료 조회를 거부한다. 부�
 하는 오류다. `audit()`은 복구 필요 표시, JSONL/seq/ID/시각/최종 출력 불일치,
 미마감 partial trace를 보고하지만 자동 복구는 하지 않는다.
 
-**실행기 연결 완료:** CrewAI는 `RecordedTaskExecutor`와 run별 `RunTrace`로 이 API를 사용한다.
+**G2 실행기·audit 연결 완료:** CrewAI는 `RecordedTaskExecutor`와 run별 `RunTrace`로 이 API를 사용한다.
 Judge 기록은 `evaluation` phase이며 최종 출력 증거는 마지막 pipeline `final` 메시지다.
-최종 matrix의 예정 목록 대비 누락, 재시도 허용 정책, domain·주입 증거,
-지표 재계산은 후속 executor·audit/집계 도구에서 검증해야 한다.
+`audit.py`는 예정 목록 대비 누락·중복, 재시도 허용 정책, domain·주입 증거를 검사한다.
+BU·UA·ASR·비용의 전체 원본 재계산과 artifact 동결은 G6 집계 도구의 후속 범위다.
 
 
-### CrewAI 실행 CLI (G0 개발 경로)
+### CrewAI 실행 CLI (G2 검증 완료 개발 경로)
 
 아래 명령은 지정한 모델 API로 Math 1건을 실행한다. 이번 검증에서는 API를 호출하지 않았다.
 
@@ -212,6 +222,19 @@ G1에서 `normalizer: text-envelope-v1`도 이 단일 설정에 고정했다. Fi
 `--resume`은 valid false를 포함한 완료 run을 재사용한다. `--retry_errors`는
 기록된 일시적 provider/timeout 오류만 총 3시도까지 재시도한다. 동일 run의 동시 실행은 거부한다.
 평가 error/unknown은 false로 집계하지 않으며 BU/UA와 ASR의 유효 분모를 따로 출력한다.
+
+기록된 전체 조건을 manifest 계획과 대조하려면 다음과 같이 실행한다. `--matrix`는
+`benign`, `core-attacks`, `pilot`, `confirmation` 중 하나다. 같은 experiment 디렉터리에
+다른 phase/matrix가 함께 있으면 `--allow_additional`을 명시하되 예상 조합의 누락은
+계속 실패로 처리한다.
+
+```bash
+.aciarena/bin/python scripts/audit_records.py \
+  --experiment_id <experiment-id> \
+  --output_dir logs \
+  --matrix core-attacks \
+  --allow_additional
+```
 
 Math 검증은 원본 verifier 메서드를 별도 프로세스의 main thread에서 실행한다.
 Code는 Linux x86_64 user/network/PID namespace, Landlock, seccomp, rlimit을 적용한

@@ -154,7 +154,7 @@ python benchmark.py --mas sc [--task_domain math] [--max_workers 1]
 ```
 
 
-### CrewAI G0 recorded 실행
+### CrewAI G2 recorded 실행·감사
 
 `crewai_seq_nodeleg`는 이제 recorded 실행기를 거친다. run마다 객체를 새로 만들고,
 `runs.jsonl` / `messages.jsonl`에 기록하며, 설정 스냅샷과 명시적 attack ID를 남긴다.
@@ -164,6 +164,14 @@ namespace/Landlock/seccomp/rlimit 격리(sandbox) 안에서 실행된다. 해당
 적용할 수 없으면 생성된 코드를 실행하지 않고 `CodeSandboxUnavailable`을 기록한다.
 recorded CLI는 `configs/experiments/core.yaml`을 단일 G0 개발 계약으로 읽고, 여기서
 참조하는 model·Judge·retry·verifier·dependency lock을 검증한다.
+G2부터 각 실행 결과를 반환하기 전에 선택한 task/attack 계획과 JSONL·config·주입
+증거를 함께 감사한다. 전체 기록은 아래 명령으로 manifest matrix와 다시 대조할 수 있다.
+
+```bash
+.aciarena/bin/python scripts/audit_records.py \
+  --experiment_id <experiment-id> --output_dir logs \
+  --matrix core-attacks --allow_additional
+```
 
 **즉, 이제 모든 로그는 '--experiment_id' 옵션으로 지정한 이름으로 만들어지는 logs/~ 폴더에 저장됩니다.**
 * '--experiment_id' 옵션을 지정하지 않으면 자동으로 [crewai-development-v1]로 생성됩니다.
@@ -175,4 +183,3 @@ messages.jsonl = "어떻게 나왔나(과정)"
 
 위 둘은 run_id로 join됨
 ```
-

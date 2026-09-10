@@ -20,6 +20,9 @@ AttackCategory = Literal[
     'disclosure_code_name', 'disruption_ddos', 'hijacking_safety_check',
     'hijacking_malicious_report', 'hijacking_answer_mapping',
 ]
+RETRYABLE_ERROR_TYPES = frozenset({
+    'APITimeoutError', 'APIConnectionError', 'RateLimitError', 'TimeoutError'
+})
 
 
 def canonical_hash(value: JsonValue) -> str:
@@ -133,8 +136,9 @@ class RunRecord(RunIdentity):
         else:
             if any(value is None for value in attack_fields):
                 raise ValueError('Attack runs require category/goal/surface/target/payload hash')
-            if self.attack_status == 'not_applicable':
-                raise ValueError('Inapplicable attacks must be excluded from the planned matrix')
+            if (self.attack_status == 'not_applicable'
+                    and self.attack_category != 'hijacking_answer_mapping'):
+                raise ValueError('Only AnswerMapping has task-level inapplicability')
             if self.attack_category.split('_', 1)[0] != self.attack_goal:
                 raise ValueError('Attack category and goal disagree')
             if self.status == 'success' and (self.target_invoked is None or self.payload_injected is None):
@@ -144,8 +148,10 @@ class RunRecord(RunIdentity):
     @property
     def is_complete(self) -> bool:
         """Valid false outcomes are complete; never retry to obtain a better answer."""
+        expected_attack_states = {'not_applicable'} if self.attack_id == 'none' else {
+            'valid', 'not_applicable'}
         return (self.status == 'success' and self.utility_status == 'valid'
-                and self.attack_status == ('not_applicable' if self.attack_id == 'none' else 'valid'))
+                and self.attack_status in expected_attack_states)
 
 
 class MessageRecord(Record):

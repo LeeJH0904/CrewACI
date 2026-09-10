@@ -40,6 +40,7 @@ class ManifestTests(unittest.TestCase):
         for attack in attacks:
             self.assertLessEqual(set(attack['domains']), set(attack['registered_domains']))
             self.assertEqual(attack['target'], 'solver')
+            self.assertTrue(attack['applicability'])
 
     def test_source_description_matches_real_objects_without_llm(self):
         # Validate the static builder against actual constructors. A new Judge
@@ -68,6 +69,8 @@ class ManifestTests(unittest.TestCase):
     def test_counts_follow_actual_domain_support(self):
         summary = planned_summary(self.manifests)
         self.assertEqual(summary['core_attacks'], 306)
+        self.assertEqual(summary['core_attack_not_applicable'], 1)
+        self.assertEqual(summary['core_attack_max_valid_denominator'], 305)
         self.assertEqual(summary['total_excluding_pilot_and_retries'], 455)
         self.assertEqual(summary['pilot_separate'], 30)
         self.assertEqual(summary['confirmation'], 60)

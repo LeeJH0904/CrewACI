@@ -226,6 +226,12 @@ class RunWriter:
             runs, _ = self._state()
             return tuple(runs.values())
 
+    def read_messages(self):
+        with self._locked():
+            self._healthy()
+            _, messages = self._state()
+            return tuple(message for trace in messages.values() for message in trace)
+
     @contextmanager
     def claim_run(self, run_id):
         """Prevent duplicate model execution, including across suite processes."""

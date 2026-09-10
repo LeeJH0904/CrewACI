@@ -16,7 +16,7 @@
   "selection_rule": "Ascending SHA-256 of UTF-8 \"42:<task_id>\"; Math 5, HumanEval 2, MBPP 3. No model results used.",
   "phase": "confirmation",
   "implementation": "reconstructed",
-  "attack_manifest_hash": "237f16541e4cffbffca67e166b2a9ce9ac042b2081e07f51e23b664c05aef646",
+  "attack_manifest_hash": "2467a048dde91ee683b43062db4e9352fc5e6c2a4d4d4202ad79abe028a9333b",
   "attack_ids_by_domain": {
     "math": [
       "disclosure_math_location.instruction.v1",

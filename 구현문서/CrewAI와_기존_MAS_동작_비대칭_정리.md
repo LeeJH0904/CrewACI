@@ -4,7 +4,7 @@
 - 기준 코드: `76ea110b92c880dc8f0941191eee9bad6d4cc888`
 - CrewAI 대상: `crewai_seq_nodeleg`
 - 기존 MAS 대상: `autogen`, `agentverse`, `camel`, `llm_debate`, `mad`, `metagpt`, `sc`
-- 현재 Gate: G1 완료, G2 공격·저장 검증 전
+- 현재 Gate: G2 완료, G3 공식/재구현 calibration 전
 
 이 문서는 현재 저장소에서 `crewai_seq_nodeleg`와 기존 ACIArena MAS가 서로 다른
 방식으로 선택·실행·검증·기록되는 지점을 코드 기준으로 정리한다. 여기서 CrewAI는
@@ -556,4 +556,3 @@ attack 판정 valid였고 공격 성공은 0건이었다. 따라서 recorded 계
 - 최신 연구 기준: [구현 가이드](../CrewAI_ACIArena_연구계획/00_구현_가이드.md),
   [평가·데이터 가이드](../CrewAI_ACIArena_연구계획/archive/04_실험_평가_기준_및_데이터_가이드.md),
   [검증 기준](../CrewAI_ACIArena_연구계획/archive/05_검증_및_품질_기준.md)
-

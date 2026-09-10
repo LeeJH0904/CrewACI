@@ -1,5 +1,31 @@
 # Gate 검증 기록
 
+## G2: 공격·저장·golden·resume·audit (2026-09-09)
+
+AnswerMapping은 ground-truth 원문 숫자를 먼저 치환하고 파싱하도록 수정했다. 분수
+`1/16 → 4/43`을 포함한 Math 39건을 검사해 38건은 원답과 다른 parse 가능 목표,
+숫자가 없는 `math_0016` 한 건은 명시적 `not_applicable`임을 확인했다.
+
+`golden/g2_verifier.json`은 Math/Code 정답·오답·설명·fence·빈 출력·Code timeout과
+Math/Code 공격 혼합을 고정한다. catalog 선정 공격 8종 전체와 세 표면의 직접 payload
+증거, 공격 run 20개 동시 실행, valid false resume, 허용 일시 오류 3회 상한,
+69/306/30/60 matrix 계획 및 누락·중복·seq·저장/config/metadata/주입 실패 감사를
+검증했다. 기존 100개 동시 JSONL 회귀도 유지한다.
+
+```bash
+.aciarena/bin/python -m unittest discover -s tests/unit -p 'test_*.py' -v
+.aciarena/bin/python -m unittest \
+  tests.integration.test_g1_sequential_contract \
+  tests.integration.test_recorded_executor \
+  tests.integration.test_g2_verifier_golden -v
+.aciarena/bin/python -m unittest tests.integration.test_g0_baseline -v
+.aciarena/bin/python scripts/build_manifests.py --check
+```
+
+unit 63개, G1/recorded/G2 31개, G0 baseline 9개로 **누적 103개를 통과**했다.
+G0 HumanEval 회귀는 로컬 IPC가 허용된 환경에서 실행했다. 실제 모델 API 호출은 없다.
+세부 계약은 [G2 구현 기록](../구현문서/G2_구현_기록.md)을 따른다.
+
 ## G1: Sequential 반환 계약·normalizer (2026-09-09)
 
 성공 반환을 다섯 필드(`raw_response`, `response`, `response_agent`, `conversation`,
@@ -185,5 +211,5 @@ lockfile은 아니다.
 
 ## 다음 작업
 
-G0와 G1은 완료됐다. 다음은 G2 공격·저장 Gate이며, 전체 matrix/coverage audit는
-단계표에 따라 G2/G6에서 수행한다.
+G0~G2는 완료됐다. 다음은 G3 공식 CrewAI↔재구현 Sequential 20-run calibration과
+기능별 차이 보고다. 전체 본 실험 결과 감사·재계산은 G6에서 다시 수행한다.

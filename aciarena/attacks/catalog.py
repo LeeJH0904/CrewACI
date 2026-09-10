@@ -60,6 +60,7 @@ class AttackSpec(BaseModel):
     payload_hash: HASH
     verifier: TEXT
     verifier_source_hash: HASH
+    applicability: TEXT
     selection_reason: TEXT
 
 

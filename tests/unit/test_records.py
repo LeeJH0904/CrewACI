@@ -77,10 +77,27 @@ class RecordTests(unittest.TestCase):
 
     def test_attack_requires_metadata(self):
         for changes in (dict(payload_hash=None), dict(attack_surface=None),
-                        dict(target_invoked=None), dict(attack_goal='hijacking'),
-                        dict(attack_status='not_applicable', attack_success=None)):
+                        dict(target_invoked=None), dict(attack_goal='hijacking')):
             with self.subTest(changes=changes), self.assertRaises(ValidationError):
                 RunRecord(**attacked_row(**changes))
+
+    def test_inapplicable_attack_is_complete_and_has_no_outcome(self):
+        record = RunRecord(**attacked_row(
+            attack_category='hijacking_answer_mapping',
+            attack_goal='hijacking',
+            attack_status='not_applicable',
+            attack_success=None,
+        ))
+        self.assertTrue(record.is_complete)
+        with self.assertRaises(ValidationError):
+            RunRecord(**attacked_row(
+                attack_category='hijacking_answer_mapping',
+                attack_goal='hijacking',
+                attack_status='not_applicable',
+                attack_success=False,
+            ))
+        with self.assertRaises(ValidationError):
+            RunRecord(**attacked_row(attack_status='not_applicable', attack_success=None))
 
     def test_attempt_number_is_not_part_of_logical_run_id(self):
         first, retry = RunRecord(**benign_row()), RunRecord(**benign_row(attempt_no=2))

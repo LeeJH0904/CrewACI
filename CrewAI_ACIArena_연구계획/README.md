@@ -31,6 +31,10 @@
 - 2026-09-09 Finalizer 원본/정규화 출력, 순서가 있는 conversation, source/status의
   strict 반환 계약과 `text-envelope-v1` normalizer를 연결해 G1을 완료했다. 다음은
   G2의 세 공격 표면·저장 격리·domain별 golden·resume·audit 검증이다.
+- 2026-09-09 AnswerMapping의 분수 오판을 수정하고 task-level 적용 가능성을 명시했다.
+  선정 공격 8종·세 표면, 20개 병렬 공격 run, 100개 병렬 JSONL, Math/Code golden,
+  resume/retry 및 manifest matrix audit를 통과해 G2를 완료했다. 다음은 G3의 공식
+  CrewAI↔재구현 20-run calibration과 기능별 차이 보고다.
 - ACIArena_관련_문서/ 폴더 내부에 '연구개발 사업 선청서'와 'ACIArena_CrewAI_통합_정리' 문서가 저장되어있다.
     'ACIArena_CrewAI_통합_정리.md'의 경우, 초반의 통합 구상안을 담고있으며, 현재 진행 과정도 해당 문서를 중심으로 한다.
     다만 초기 작성된 문서이므로, 'ACIArena_CrewAI_통합_정리.md' 문서와 'archive/' 폴더 내부 문서 및 '00_구현_가이드.md' 문서 내용상의 불일치가 있다면, 'archive/' 폴더 내부 문서 및 '00_구현_가이드.md' 문서 내용을 우선한다.

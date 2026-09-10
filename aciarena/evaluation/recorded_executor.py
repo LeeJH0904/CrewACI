@@ -17,7 +17,7 @@ import threading
 import time
 from urllib.parse import urlsplit, urlunsplit, parse_qsl, urlencode
 
-from .records import RunIdentity, RunRecord, canonical_hash
+from .records import RETRYABLE_ERROR_TYPES, RunIdentity, RunRecord, canonical_hash
 from .run_writer import RunWriter, StorageError, RecordConflictError
 from .configuration import UTILITY_VERIFIER_VERSION
 from .normalizers import NORMALIZER_VERSION, normalize_response
@@ -28,7 +28,7 @@ from aciarena.utils.factory import build_attack, build_mas
 
 ROOT = Path(__file__).resolve().parents[2]
 SECRET_KEYS = {'api_key', 'api_token', 'access_token', 'authorization', 'password', 'secret'}
-RETRYABLE = {'APITimeoutError', 'APIConnectionError', 'RateLimitError', 'TimeoutError'}
+ATTACK_NOT_APPLICABLE = object()
 
 
 class CodeSandboxUnavailable(RuntimeError):
@@ -71,7 +71,10 @@ def verify_math(task, spec=None):
         if result.returncode in (-signal.SIGKILL, -signal.SIGXCPU):
             return False
         raise ValueError('Isolated math verifier failed: ' + (result.stdout.strip() or 'worker terminated'))
-    return json.loads(result.stdout)['value']
+    payload = json.loads(result.stdout)
+    if spec is not None and payload.get('applicable') is False:
+        return ATTACK_NOT_APPLICABLE
+    return payload['value']
 
 
 def verify_code(task):
@@ -196,6 +199,7 @@ class RecordedTaskExecutor:
                    'aciarena/evaluation/code_verifier_worker.py',
                    'aciarena/evaluation/normalizers.py', 'aciarena/mas/crewai/schemas.py',
                    'aciarena/evaluation/configuration.py',
+                   'aciarena/evaluation/audit.py',
                    'aciarena/utils/factory.py', 'aciarena/agent_components/base_agent.py', 'aciarena/mas/base_mas.py']
         config = {'model': public_config(model), 'judge': public_config(self.judge_config),
                   'experiment_contract': self.experiment_contract,
@@ -239,7 +243,8 @@ class RecordedTaskExecutor:
                         return complete
                     raise RecordConflictError('Run complete; use resume to reuse its recorded result')
                 attempt_no = self.writer.next_attempt_no(run_id)
-                if previous and (not retry or attempt_no > 3 or previous[-1].error_type not in RETRYABLE):
+                if previous and (not retry or attempt_no > 3
+                                 or previous[-1].error_type not in RETRYABLE_ERROR_TYPES):
                     raise RecordConflictError('Retry requires explicit authorization and a transient provider error (max 3 attempts)')
                 self.writer.store_config(identity.config_hash, config)
                 return self._attempt(identity, attempt_no, spec, model, task)
@@ -335,7 +340,9 @@ class RecordedTaskExecutor:
                         else:
                             trace.attach_llm('attack_judge', attack.llm_judge, judge=True)
                             value = attack.verify()
-                    if value is None:
+                    if kind == 'attack' and value is ATTACK_NOT_APPLICABLE:
+                        evaluations['attack_status'] = 'not_applicable'
+                    elif value is None:
                         evaluations[f'{kind}_status'] = 'unknown'
                     elif type(value) in (bool, float, int) and value in (0, 1):
                         evaluations[f'{kind}_status'] = 'valid'

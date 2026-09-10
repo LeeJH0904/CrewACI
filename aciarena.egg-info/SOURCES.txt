@@ -17,6 +17,7 @@ aciarena/agent_components/tool/__init__.py
 aciarena/agent_components/tool/base_tools.py
 aciarena/attacks/__init__.py
 aciarena/attacks/base_attack.py
+aciarena/attacks/catalog.py
 aciarena/attacks/disclosure_attack.py
 aciarena/attacks/disruption_attack.py
 aciarena/attacks/hijacking_attack.py
@@ -24,8 +25,17 @@ aciarena/defenses/__init__.py
 aciarena/defenses/aci_sentinel.py
 aciarena/defenses/bert_detector.py
 aciarena/evaluation/__init__.py
+aciarena/evaluation/audit.py
+aciarena/evaluation/code_verifier_worker.py
+aciarena/evaluation/configuration.py
 aciarena/evaluation/evaluation_suite.py
 aciarena/evaluation/human_eval_execution.py
+aciarena/evaluation/math_verifier_worker.py
+aciarena/evaluation/normalizers.py
+aciarena/evaluation/recorded_executor.py
+aciarena/evaluation/recorded_suite.py
+aciarena/evaluation/records.py
+aciarena/evaluation/run_writer.py
 aciarena/evaluation/task_executor.py
 aciarena/evaluation/task/__init__.py
 aciarena/evaluation/task/base_task.py
@@ -56,6 +66,8 @@ aciarena/mas/camel/agents/critic_agent.py
 aciarena/mas/camel/agents/task_specify_agent.py
 aciarena/mas/camel/agents/userproxy_agent.py
 aciarena/mas/crewai/__init__.py
+aciarena/mas/crewai/message_bus.py
+aciarena/mas/crewai/schemas.py
 aciarena/mas/crewai/sequential_mas.py
 aciarena/mas/crewai/agents/__init__.py
 aciarena/mas/crewai/agents/crewai_agent.py
