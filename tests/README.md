@@ -1,5 +1,23 @@
 # Gate 검증 기록
 
+## G3: 공식 CrewAI 기능 대조 Gate 완료 (2026-09-10)
+
+공식 `crewai==1.15.21` 별도 환경에서 실제 `Agent`/`Task`/`Crew`와
+`Process.sequential`을 로컬 mock OpenAI endpoint로 실행했다. Solver→Reviewer→Finalizer,
+Task context, Finalizer source와 실제 LLM 입력/응답 hook을 확인했다. 메인 환경에는 G3
+계약·저장·공통 verifier 비교 테스트 8개를 추가했다.
+
+```bash
+.aciarena/bin/python -m unittest tests.unit.test_g3_calibration -v
+CREWAI_DISABLE_TELEMETRY=true CREWAI_STORAGE_DIR=/tmp/crewai-g3-reference-test \
+  .native-crewai/bin/python -m unittest native_reference.test_native_smoke -v
+```
+
+G3 추가 테스트는 메인 8개와 별도 native smoke 1개가 통과했다. 전체 main unit 71개와
+기존 integration 40개를 합친 메인 111개가 통과했다. authoritative v2 실제 실행도 양쪽
+10/10 완료, context/source 전수 통과, parse 차이 10pp로 Gate를 통과했다. 실행법과 v1
+진단 이력은 [`native_reference/README.md`](../native_reference/README.md)를 따른다.
+
 ## G2: 공격·저장·golden·resume·audit (2026-09-09)
 
 AnswerMapping은 ground-truth 원문 숫자를 먼저 치환하고 파싱하도록 수정했다. 분수

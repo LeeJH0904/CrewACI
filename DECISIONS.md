@@ -131,9 +131,36 @@
 | ID | 질문 | 선택지·비고 | 막는 것 | 목표 시점 |
 |---|---|---|---|---|
 | D2(잔여) | GPT-4o-mini의 seed 42 실제 지원 여부와 적용 설정 | provider 실측 후 기록, 완전 결정성 주장 금지 | 최종 벤치 재현성 | G5 직전 |
-| D2(잔여) | G3 calibration·G4 pilot의 모델 배정 (로컬 vs GPT-4o-mini) | 비용·대조 목적에 따라 선택 | 공식 대조·파일럿 설계 | G3/G4 |
+| D2(잔여) | G4 pilot의 모델 배정 (로컬 vs GPT-4o-mini) | 비용·파일럿 목적에 따라 선택. G3는 D36에서 로컬로 확정 | 파일럿 설계 | G4 |
 | D5 | PVI 산출 여부 | 산출 시 전파 위반·거리·coverage·집계식 사전 정의 / 미산출 시 사유 기록. Solver 단일·Sequential에선 관측 불가 가능 | 지표 목록, 신청서 대비 범위 | G0/G5 |
-| D13 | 공식 CrewAI 버전 pin | `native_reference/`용 crewai 정확한 버전 + lockfile + 기준 Crew 구성(role/goal/backstory·Task) | 공식 대조 | G3 |
+| D13 | 공식 CrewAI 버전 pin | **해결: D36의 crewai 1.15.21 + 별도 exact lock** | - | G3 |
+
+## 5.1 G3 개발 결정 — 2026-09-10
+
+### D36 — 공식 runtime·모델·격리 계약
+
+- **공식 버전:** 2026-09-10 공식 문서/PyPI의 안정판 `crewai==1.15.21`을 고정한다.
+  `native_reference/requirements.lock`의 Python 3.10 별도 환경을 사용하며 메인
+  `.aciarena` 의존성과 섞지 않는다. 공식 runtime은 기본 `AgentExecutor`와
+  `Process.sequential`을 그대로 사용한다.
+- **모델 배정:** G3는 성능 본 실험이 아니라 기능 calibration이므로 양쪽 모두 G0 개발
+  계약의 Bionic 로컬 `qwen2.5-0.5b-instruct`를 사용한다. temperature 0.0,
+  max tokens 1,024, seed 42 요청을 맞추고 paid API budget은 0이다. 이 수치는 G5
+  GPT-4o-mini 결과와 섞지 않는다. G4 모델 배정은 별도 결정으로 남긴다.
+- **기준 구성:** 동일 Solver·Reviewer·Finalizer role/goal/backstory, 비위임, 도구·
+  Memory·Planning 비활성, 세 Task와 명시적 context를 사용한다. 공식 runtime 고유 system/
+  task 프롬프트와 executor 동작은 차이 관측 대상이므로 재구현 프롬프트로 덮지 않는다.
+- **기록·판정:** 각 구현은 별도 interpreter에서 10개 고정 태스크를 실행해 총 20 rows를
+  남긴다. 실제 LLM 입력/출력, Task 출력, 호출 순서·수, 최종 source, usage·시간·오류를
+  보존하고 양쪽 raw 출력은 메인 ACIArena verifier로 동일하게 재평가한다. API key는
+  기록하지 않으며 공식 telemetry/tracing은 비활성화한다.
+- **완료 경계:** 10+10 완료, context/source 증거, parse 성공률 차이 10 percentage
+  points 이하와 task-level utility disagreement 보고가 G3 Gate다. 작은 대조를 공식
+  CrewAI 전체와의 동등성 증명으로 해석하지 않는다.
+- **완료 결과:** authoritative run은 `g3-sequential-calibration-v2`다. 양쪽 10/10 완료,
+  context·Finalizer source 전수 통과, parse 100%/90%(차이 10pp), 비교 가능한 9쌍의
+  utility disagreement 0건으로 G3 Gate를 통과했다. 한 쌍은 native parse 불가로 비교에서
+  제외했다. 최초 v1은 multiline context 검사 결함을 발견한 진단 이력으로만 보존한다.
 
 ---
 

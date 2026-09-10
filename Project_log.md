@@ -1,3 +1,31 @@
+## 2026-09-10 — G3 공식 CrewAI 기능 대조 20-run Gate 완료
+
+- **공식 참조 동결:** `crewai==1.15.21`을 Python 3.10 별도 `.native-crewai` 환경과
+  140-package exact lock으로 고정했다. 메인 `.aciarena` 의존성과 분리하고 공식 telemetry/
+  tracing은 비활성화했다.
+- **대조 실행기:** 고정 Math 5·Code 5를 reconstructed/native에서 각각 실행하는 CLI를
+  추가했다. 동일 role·goal·backstory, 세 Task context, 비위임·도구/Memory/Planning
+  비활성 조건을 쓰되 공식 runtime의 기본 executor와 prompt scaffolding은 보존한다.
+- **기록·비교:** 구현별 append-only JSONL에 실제 LLM 입력/응답, Task 출력, 호출 순서·수,
+  Finalizer source, usage·시간·오류를 저장한다. 비교기는 양쪽 raw를 동일 ACIArena
+  verifier로 평가하고 완료·parse·context/source·utility disagreement를 보고한다.
+- **검증:** G3 신규 main unit 8개를 포함한 unit 71개, 기존 integration 40개로 메인
+  111개와 별도 공식 runtime smoke 1개를 통과했다. native smoke는 로컬 mock OpenAI
+  endpoint를 사용해 외부 API 호출이 없고, native 요청의 원시 model id가 공통 config와
+  일치함도 확인했다.
+- **파싱 경계:** HumanEval은 모델 응답에서 추출한 completion을 원본 prompt 뒤에 붙인
+  실제 verifier 입력을 parse한다. 완료됐지만 parse unknown인 실행도 성공률 분모에 남긴다.
+- **실행 이력:** 기본 샌드박스의 loopback 제한을 실제 endpoint 중단으로 오인했으나,
+  호스트 권한에서 `/v1/models`와 `qwen2.5-0.5b-instruct`를 확인했다. 최초 v1 실행은
+  multiline context를 JSON escape 문자열에서 검색한 분석 결함 때문에 진단 FAIL로 보존했다.
+  생성 runtime 계약과 분석기 버전을 분리하고 검사기를 수정해 v2를 새로 실행했다.
+- **Gate:** authoritative `g3-sequential-calibration-v2`는 reconstructed/native 각각
+  10/10 완료, context·Finalizer source 각각 10/10, parse 10/10 대 9/10(차이 10pp)으로
+  PASS했다. 비교 가능한 9쌍의 utility disagreement는 0건이고 `code_0006` 한 쌍은 native
+  응답의 문법 오류로 비교 불가다. 양쪽 utility 성공은 0건이므로 성능 동등성은 주장하지 않는다.
+- **실행량:** reconstructed/native 모두 30 LLM calls. 각각 25,453/22,999 tokens,
+  누적 latency 76.054/72.959초를 기록했다.
+
 ## 2026-09-09 — G2: 공격·저장·golden·resume·audit Gate 완료
 
 - **AnswerMapping 보정:** 파싱된 SymPy `Integer`만 치환해 분수 등에서 원답을 공격

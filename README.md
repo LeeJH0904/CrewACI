@@ -183,3 +183,13 @@ messages.jsonl = "어떻게 나왔나(과정)"
 
 위 둘은 run_id로 join됨
 ```
+
+### CrewAI G3 공식 runtime 기능 대조
+
+G3는 고정된 정상 태스크 10개를 재구현과 공식 CrewAI 1.15.21에서 각각 실행해 총 20 rows를
+비교하는, 재구현 충실도 검증 단계다. 공식 패키지는 본 벤치 runtime에 섞지 않고 `.native-crewai`
+별도 환경에서만 쓰며, 본 벤치 라이브러리(패키징)에는 포함되지 않는다. `g3-sequential-calibration-v2`에서
+양쪽 10/10 완료, context/Finalizer source 전수 확인, parse 성공률 100% 대 90%(차이 10 percentage
+points)로 **G3 Gate를 통과했다**(비교 가능한 9쌍의 utility disagreement 0건, 성능 동등성 증명은 아님).
+
+설치·실행 순서·옵션·산출물·판정 기준은 [`native_reference/README.md`](native_reference/README.md)를 참고한다.

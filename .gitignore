@@ -15,3 +15,5 @@ __pycache__/
 *$py.class
 
 /.aciarena/
+/.native-crewai/
+/outputs/g3/**/.calibration.lock
