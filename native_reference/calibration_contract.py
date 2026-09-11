@@ -81,9 +81,15 @@ TASK_CONTRACT = (
         "agent": "finalizer",
         "description": (
             "Original task:\n{query}\n\nProduce the corrected final answer. "
-            "Return only the final answer in the requested format."
+            "Return only the final answer in the requested format. "
+            "For a mathematics task, the final answer must contain an explicit "
+            "numeric value (for example, \\boxed{{42}}); never replace it with only "
+            "a verbal conclusion. For a code task, return only the requested code."
         ),
-        "expected_output": "Only the corrected final answer in the user's requested format.",
+        "expected_output": (
+            "Only the corrected final answer in the user's requested format; an explicit "
+            "numeric value for mathematics, or only the requested code for code tasks."
+        ),
         "context": ["solve", "review"],
     },
 )

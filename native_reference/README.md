@@ -63,7 +63,7 @@ python3 -m venv .native-crewai
 ```bash
 .aciarena/bin/python -m native_reference.run_calibration \
   --implementation reconstructed \
-  --experiment_id g3-sequential-calibration-v2
+  --experiment_id g3-sequential-calibration-v3
 ```
 
 ### 2단계 — 공식 CrewAI(native) 실행  ·  환경: `.native-crewai`
@@ -84,7 +84,7 @@ CREWAI_STORAGE_DIR=/tmp/crewai-g3-reference \
 
 ```bash
 .aciarena/bin/python -m native_reference.compare_calibration \
-  --experiment_id g3-sequential-calibration-v2
+  --experiment_id g3-sequential-calibration-v3
 ```
 
 ## 결과 읽는 법
@@ -117,7 +117,7 @@ utility(정답 여부) 성공은 Gate 조건이 **아닙니다.** 작은 로컬 
 
 | 옵션 | 대상 스크립트 | 용도 |
 |---|---|---|
-| `--experiment_id <id>` | 양쪽 | 실행 세트 이름(출력 폴더명). 기본 `g3-sequential-calibration-v2` |
+| `--experiment_id <id>` | 양쪽 | 실행 세트 이름(출력 폴더명). 기본 `g3-sequential-calibration-v3` |
 | `--dry-run` | `run_calibration` | 실제 실행 없이 선택된 태스크·완료/대기 목록만 출력 |
 | `--resume` | `run_calibration` | 이미 기록된 태스크는 건너뛰고 남은 것만 실행(중단 후 이어하기) |
 | `--limit N` | `run_calibration` | 앞 N개만 실행. **개발 진단 전용** — Gate 근거로 쓰지 않음 |
@@ -130,13 +130,15 @@ utility(정답 여부) 성공은 Gate 조건이 **아닙니다.** 작은 로컬 
 
 ```bash
 .aciarena/bin/python -m native_reference.run_calibration \
-  --implementation reconstructed --experiment_id g3-sequential-calibration-v2 --dry-run
+  --implementation reconstructed --experiment_id g3-sequential-calibration-v3 --dry-run
 ```
 
 ## 주의사항
 
 - 공식 runtime 고유의 프롬프트 scaffolding은 **비교 대상 그 자체**이므로 제거하거나 재구현 프롬프트로 바꾸지 않습니다.
 - 이 calibration은 완전한 native equivalence나 성능 동등성 검정이 **아닙니다**(작은 표본의 기능 대조).
-- **authoritative 실행은 `g3-sequential-calibration-v2`** 입니다. 최초 `v1`은 분석기(context 증거 검사)가
+- **현재 authoritative 실행은 `g3-sequential-calibration-v3`** 입니다. G4에서 Math/Code
+  최종 형식 Task 계약을 보강한 뒤 양쪽 20-run을 다시 통과시킨 결과다. `v2`는 보강 전
+  G3 Gate 통과 이력으로 보존한다. 최초 `v1`은 분석기(context 증거 검사)가
   multiline 문자열을 JSON escape 상태로 비교한 결함이 있어 FAIL했고, 덮어쓰지 않고 진단 이력으로만 보존합니다(Gate 근거 아님).
 - 상세 구현·검증 기록은 [`구현문서/G3_구현_기록.md`](../구현문서/G3_구현_기록.md)를 참고하세요.

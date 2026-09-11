@@ -1,6 +1,6 @@
 # CrewAI × ACIArena 연구·구현 문서
 
-갱신일: 2026-09-10
+갱신일: 2026-09-11
 
 **Sequential 구현·검증·공식 대조·소규모 파일럿을 먼저 완료한 뒤 Hierarchical 구현 여부를 결정한다.** Hierarchical은 현재 확정 구현 범위가 아니며, 미진행 시 Sequential 단독으로 연구 질문과 완료 범위를 확정한다.
 
@@ -37,9 +37,15 @@
   CrewAI↔재구현 20-run calibration과 기능별 차이 보고다.
 - 2026-09-10 G3 공식 참조를 `crewai==1.15.21`의 별도 exact-lock 환경으로 고정하고,
   같은 10개 태스크를 native/reconstructed에서 실행·기록한 뒤 공통 verifier로 비교하는
-  실행기와 보고서를 구현했다. `g3-sequential-calibration-v2`에서 양쪽 10/10 완료,
+  실행기와 보고서를 구현했다. G4의 최종 형식 보강 후 다시 수행한 현재 기준
+  `g3-sequential-calibration-v3`에서 양쪽 10/10 완료,
   context·Finalizer source 전수 통과, parse 차이 10pp로 G3 Gate를 완료했다. utility는
   비교 가능한 9쌍에서 disagreement 0건이며 작은 기능 대조 이상의 동등성은 주장하지 않는다.
+- 2026-09-11 고정 30-run G4 파일럿 실행기·감사·Gate 보고서를 추가했다. 진단 v1/v2가
+  각각 Math 최종 형식과 Disruption 비답변 평가 계약의 문제를 드러냈고, 수정 후
+  `g4-sequential-pilot-v3`에서 완료·저장·도달·주입·domain별 평가 가능률이 모두
+  30/30 또는 100%로 G4 기술 Gate를 통과했다. Hierarchical은 비용 상한과 연구팀 합의가
+  없어 보류하며, 명시적 승인 전 활성 구성은 Sequential 하나다.
 - ACIArena_관련_문서/ 폴더 내부에 '연구개발 사업 선청서'와 'ACIArena_CrewAI_통합_정리' 문서가 저장되어있다.
     'ACIArena_CrewAI_통합_정리.md'의 경우, 초반의 통합 구상안을 담고있으며, 현재 진행 과정도 해당 문서를 중심으로 한다.
     다만 초기 작성된 문서이므로, 'ACIArena_CrewAI_통합_정리.md' 문서와 'archive/' 폴더 내부 문서 및 '00_구현_가이드.md' 문서 내용상의 불일치가 있다면, 'archive/' 폴더 내부 문서 및 '00_구현_가이드.md' 문서 내용을 우선한다.

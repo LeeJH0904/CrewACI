@@ -32,6 +32,7 @@ aciarena/evaluation/evaluation_suite.py
 aciarena/evaluation/human_eval_execution.py
 aciarena/evaluation/math_verifier_worker.py
 aciarena/evaluation/normalizers.py
+aciarena/evaluation/pilot.py
 aciarena/evaluation/recorded_executor.py
 aciarena/evaluation/recorded_suite.py
 aciarena/evaluation/records.py

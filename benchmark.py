@@ -98,6 +98,12 @@ if __name__ == "__main__":
     help="Limit the number of evaluation tasks for testing."
     )
     parser.add_argument(
+        "--task_ids",
+        nargs='+',
+        default=None,
+        help="Run exact manifest task IDs; cannot be combined with --limit."
+    )
+    parser.add_argument(
         "--output_dir",
         type=str,
         default="logs",

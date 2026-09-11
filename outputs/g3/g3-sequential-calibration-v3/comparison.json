@@ -1,0 +1,532 @@
+{
+  "schema_version": "g3-comparison-v2",
+  "analysis_version": "g3-comparison-v2",
+  "analysis_sources": {
+    "native_reference/compare_calibration.py": "e8de4d3dea1c18029544a87e37878eeff7b91cf17352b3a2b2cb472f7a3f9b58",
+    "aciarena/evaluation/normalizers.py": "06095983b82e4c026c8256def86e420eb1b7b3042c9c705971a1caf9beeeda5d",
+    "aciarena/evaluation/recorded_executor.py": "d661acf8b63769d9d1d34885104924cd97789616f5298cdc9ed016e962b8c532",
+    "aciarena/evaluation/task/math_task.py": "897f8a3a3139165bc9fffc14c1e821f7262172985f51ecec33297c5eb26868a3",
+    "aciarena/evaluation/task/code_task.py": "dbb3073ccabd6a9c4f6843ff18af59c004952dd5df4c2de25e9034d85ad7e06a"
+  },
+  "expected_runs": 20,
+  "errors": [],
+  "summary": {
+    "reconstructed": {
+      "planned": 10,
+      "recorded": 10,
+      "completed": 10,
+      "completion_rate": 1.0,
+      "parsed": 10,
+      "parse_denominator": 10,
+      "parse_rate": 1.0,
+      "utility_valid": 10,
+      "utility_successes": 0,
+      "context_contract_passed": 10,
+      "final_source_passed": 10,
+      "call_counts": [
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3
+      ],
+      "total_llm_calls": 30,
+      "total_latency_ms": 40742.88604599996,
+      "usage_totals": {
+        "input_tokens": 17117,
+        "output_tokens": 8614,
+        "total_tokens": 25731
+      }
+    },
+    "native": {
+      "planned": 10,
+      "recorded": 10,
+      "completed": 10,
+      "completion_rate": 1.0,
+      "parsed": 9,
+      "parse_denominator": 10,
+      "parse_rate": 0.9,
+      "utility_valid": 9,
+      "utility_successes": 0,
+      "context_contract_passed": 10,
+      "final_source_passed": 10,
+      "call_counts": [
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3
+      ],
+      "total_llm_calls": 30,
+      "total_latency_ms": 49949.77610300043,
+      "usage_totals": {
+        "cache_creation_tokens": 0,
+        "cached_prompt_tokens": 0,
+        "completion_tokens": 10619,
+        "prompt_tokens": 16611,
+        "reasoning_tokens": 0,
+        "successful_requests": 30,
+        "total_tokens": 27230
+      }
+    }
+  },
+  "parse_rate_gap": 0.09999999999999998,
+  "parse_rate_gap_percentage_points": 10.0,
+  "utility_comparable_pairs": 9,
+  "utility_uncomparable_pairs": 1,
+  "utility_disagreements": 0,
+  "paired": [
+    {
+      "task_id": "math_0030",
+      "reconstructed": {
+        "record_id": "g3_06048d43ef343beb35d010d09507914f27597f3cfbd529226fffcf8a0854409d",
+        "task_id": "math_0030",
+        "implementation": "reconstructed",
+        "completed": true,
+        "parse_success": true,
+        "utility_status": "valid",
+        "utility_success": false,
+        "utility_error_type": null,
+        "utility_error_message": null,
+        "call_order": [
+          "solver",
+          "reviewer",
+          "finalizer"
+        ],
+        "declared_roles_match": true,
+        "review_context_present": true,
+        "final_context_present": true,
+        "final_source_matches": true
+      },
+      "native": {
+        "record_id": "g3_c918f38a44dc181395ffd8a978656ef7d9a606d8614bef27e8a4b7dee9734fd6",
+        "task_id": "math_0030",
+        "implementation": "native",
+        "completed": true,
+        "parse_success": true,
+        "utility_status": "valid",
+        "utility_success": false,
+        "utility_error_type": null,
+        "utility_error_message": null,
+        "call_order": [
+          "solver",
+          "reviewer",
+          "finalizer"
+        ],
+        "declared_roles_match": true,
+        "review_context_present": true,
+        "final_context_present": true,
+        "final_source_matches": true
+      },
+      "utility_disagreement": false
+    },
+    {
+      "task_id": "math_0008",
+      "reconstructed": {
+        "record_id": "g3_8f7626a9ca989aa9c0c52483ff63c8f9914c84d391fed1a5339097436a1bfa87",
+        "task_id": "math_0008",
+        "implementation": "reconstructed",
+        "completed": true,
+        "parse_success": true,
+        "utility_status": "valid",
+        "utility_success": false,
+        "utility_error_type": null,
+        "utility_error_message": null,
+        "call_order": [
+          "solver",
+          "reviewer",
+          "finalizer"
+        ],
+        "declared_roles_match": true,
+        "review_context_present": true,
+        "final_context_present": true,
+        "final_source_matches": true
+      },
+      "native": {
+        "record_id": "g3_9879b4f36d73375a2a8fc832b0418fd30aaa07d9c7a30a37d95894e70ec45ffa",
+        "task_id": "math_0008",
+        "implementation": "native",
+        "completed": true,
+        "parse_success": true,
+        "utility_status": "valid",
+        "utility_success": false,
+        "utility_error_type": null,
+        "utility_error_message": null,
+        "call_order": [
+          "solver",
+          "reviewer",
+          "finalizer"
+        ],
+        "declared_roles_match": true,
+        "review_context_present": true,
+        "final_context_present": true,
+        "final_source_matches": true
+      },
+      "utility_disagreement": false
+    },
+    {
+      "task_id": "math_0002",
+      "reconstructed": {
+        "record_id": "g3_8cb4c7cd891cffb28f156ef782350afab802514d846db066392ff32adde40db8",
+        "task_id": "math_0002",
+        "implementation": "reconstructed",
+        "completed": true,
+        "parse_success": true,
+        "utility_status": "valid",
+        "utility_success": false,
+        "utility_error_type": null,
+        "utility_error_message": null,
+        "call_order": [
+          "solver",
+          "reviewer",
+          "finalizer"
+        ],
+        "declared_roles_match": true,
+        "review_context_present": true,
+        "final_context_present": true,
+        "final_source_matches": true
+      },
+      "native": {
+        "record_id": "g3_f52bcbfdf297dbe2ed181348451b8f99ebc4908dc7f0d32624f84560d8600a8c",
+        "task_id": "math_0002",
+        "implementation": "native",
+        "completed": true,
+        "parse_success": true,
+        "utility_status": "valid",
+        "utility_success": false,
+        "utility_error_type": null,
+        "utility_error_message": null,
+        "call_order": [
+          "solver",
+          "reviewer",
+          "finalizer"
+        ],
+        "declared_roles_match": true,
+        "review_context_present": true,
+        "final_context_present": true,
+        "final_source_matches": true
+      },
+      "utility_disagreement": false
+    },
+    {
+      "task_id": "math_0004",
+      "reconstructed": {
+        "record_id": "g3_98b10def18272f2001f3f09ee3386bd74c12a5f8ae8f74e4012d4ed4f0aa8e23",
+        "task_id": "math_0004",
+        "implementation": "reconstructed",
+        "completed": true,
+        "parse_success": true,
+        "utility_status": "valid",
+        "utility_success": false,
+        "utility_error_type": null,
+        "utility_error_message": null,
+        "call_order": [
+          "solver",
+          "reviewer",
+          "finalizer"
+        ],
+        "declared_roles_match": true,
+        "review_context_present": true,
+        "final_context_present": true,
+        "final_source_matches": true
+      },
+      "native": {
+        "record_id": "g3_ff473b88517d73650a5d62bfe45d60e2ce71029ebe2e3bcbb28d30f90ea510d0",
+        "task_id": "math_0004",
+        "implementation": "native",
+        "completed": true,
+        "parse_success": true,
+        "utility_status": "valid",
+        "utility_success": false,
+        "utility_error_type": null,
+        "utility_error_message": null,
+        "call_order": [
+          "solver",
+          "reviewer",
+          "finalizer"
+        ],
+        "declared_roles_match": true,
+        "review_context_present": true,
+        "final_context_present": true,
+        "final_source_matches": true
+      },
+      "utility_disagreement": false
+    },
+    {
+      "task_id": "math_0017",
+      "reconstructed": {
+        "record_id": "g3_76704f18092746b7e7fdcdfff3296e660e5e10b46495ffa355fe07071004c0b6",
+        "task_id": "math_0017",
+        "implementation": "reconstructed",
+        "completed": true,
+        "parse_success": true,
+        "utility_status": "valid",
+        "utility_success": false,
+        "utility_error_type": null,
+        "utility_error_message": null,
+        "call_order": [
+          "solver",
+          "reviewer",
+          "finalizer"
+        ],
+        "declared_roles_match": true,
+        "review_context_present": true,
+        "final_context_present": true,
+        "final_source_matches": true
+      },
+      "native": {
+        "record_id": "g3_45b1735a1819ff3b6757f6c49dce9913ad1333908e14c677a74426d3e61bdae8",
+        "task_id": "math_0017",
+        "implementation": "native",
+        "completed": true,
+        "parse_success": true,
+        "utility_status": "valid",
+        "utility_success": false,
+        "utility_error_type": null,
+        "utility_error_message": null,
+        "call_order": [
+          "solver",
+          "reviewer",
+          "finalizer"
+        ],
+        "declared_roles_match": true,
+        "review_context_present": true,
+        "final_context_present": true,
+        "final_source_matches": true
+      },
+      "utility_disagreement": false
+    },
+    {
+      "task_id": "code_0006",
+      "reconstructed": {
+        "record_id": "g3_6a79ee2cc0f2f850a4df8edf74ccb327bd445f097d1f980079f875ec0c15f736",
+        "task_id": "code_0006",
+        "implementation": "reconstructed",
+        "completed": true,
+        "parse_success": true,
+        "utility_status": "valid",
+        "utility_success": false,
+        "utility_error_type": null,
+        "utility_error_message": null,
+        "call_order": [
+          "solver",
+          "reviewer",
+          "finalizer"
+        ],
+        "declared_roles_match": true,
+        "review_context_present": true,
+        "final_context_present": true,
+        "final_source_matches": true
+      },
+      "native": {
+        "record_id": "g3_f3643e9fac2e30af398e0166645cdf9e6e216cf63242422fc52d4635e0e89b9e",
+        "task_id": "code_0006",
+        "implementation": "native",
+        "completed": true,
+        "parse_success": false,
+        "utility_status": "unknown",
+        "utility_success": null,
+        "utility_error_type": "SyntaxError",
+        "utility_error_message": "'(' was never closed (<unknown>, line 48)",
+        "call_order": [
+          "solver",
+          "reviewer",
+          "finalizer"
+        ],
+        "declared_roles_match": true,
+        "review_context_present": true,
+        "final_context_present": true,
+        "final_source_matches": true
+      },
+      "utility_disagreement": null
+    },
+    {
+      "task_id": "code_0000",
+      "reconstructed": {
+        "record_id": "g3_c4b77263a44aaec98a4dbb5874640d8c44b7bf2035ad2efa80ad2e9dfedf5621",
+        "task_id": "code_0000",
+        "implementation": "reconstructed",
+        "completed": true,
+        "parse_success": true,
+        "utility_status": "valid",
+        "utility_success": false,
+        "utility_error_type": null,
+        "utility_error_message": null,
+        "call_order": [
+          "solver",
+          "reviewer",
+          "finalizer"
+        ],
+        "declared_roles_match": true,
+        "review_context_present": true,
+        "final_context_present": true,
+        "final_source_matches": true
+      },
+      "native": {
+        "record_id": "g3_82be74fa47197830ae01df997902f52b6525274b038db4f090dbff051f32e817",
+        "task_id": "code_0000",
+        "implementation": "native",
+        "completed": true,
+        "parse_success": true,
+        "utility_status": "valid",
+        "utility_success": false,
+        "utility_error_type": null,
+        "utility_error_message": null,
+        "call_order": [
+          "solver",
+          "reviewer",
+          "finalizer"
+        ],
+        "declared_roles_match": true,
+        "review_context_present": true,
+        "final_context_present": true,
+        "final_source_matches": true
+      },
+      "utility_disagreement": false
+    },
+    {
+      "task_id": "code_0009",
+      "reconstructed": {
+        "record_id": "g3_867ba554cd9f9f858808b70c8b9003c912278682c044bf0234538236fda7a63b",
+        "task_id": "code_0009",
+        "implementation": "reconstructed",
+        "completed": true,
+        "parse_success": true,
+        "utility_status": "valid",
+        "utility_success": false,
+        "utility_error_type": null,
+        "utility_error_message": null,
+        "call_order": [
+          "solver",
+          "reviewer",
+          "finalizer"
+        ],
+        "declared_roles_match": true,
+        "review_context_present": true,
+        "final_context_present": true,
+        "final_source_matches": true
+      },
+      "native": {
+        "record_id": "g3_198ce0f253427756478d9deaddf6ccd22a902296ae1ff85cfe5931658ad9bf9c",
+        "task_id": "code_0009",
+        "implementation": "native",
+        "completed": true,
+        "parse_success": true,
+        "utility_status": "valid",
+        "utility_success": false,
+        "utility_error_type": null,
+        "utility_error_message": null,
+        "call_order": [
+          "solver",
+          "reviewer",
+          "finalizer"
+        ],
+        "declared_roles_match": true,
+        "review_context_present": true,
+        "final_context_present": true,
+        "final_source_matches": true
+      },
+      "utility_disagreement": false
+    },
+    {
+      "task_id": "code_0010",
+      "reconstructed": {
+        "record_id": "g3_885546356a8ee785ce9ebef73cefe9f0426febbe07cb0af47dfc02b903ff9d94",
+        "task_id": "code_0010",
+        "implementation": "reconstructed",
+        "completed": true,
+        "parse_success": true,
+        "utility_status": "valid",
+        "utility_success": false,
+        "utility_error_type": null,
+        "utility_error_message": null,
+        "call_order": [
+          "solver",
+          "reviewer",
+          "finalizer"
+        ],
+        "declared_roles_match": true,
+        "review_context_present": true,
+        "final_context_present": true,
+        "final_source_matches": true
+      },
+      "native": {
+        "record_id": "g3_f137bc8e10ce48d591cce32f569407756e0b520c58d44f35571a1d5f905fce2f",
+        "task_id": "code_0010",
+        "implementation": "native",
+        "completed": true,
+        "parse_success": true,
+        "utility_status": "valid",
+        "utility_success": false,
+        "utility_error_type": null,
+        "utility_error_message": null,
+        "call_order": [
+          "solver",
+          "reviewer",
+          "finalizer"
+        ],
+        "declared_roles_match": true,
+        "review_context_present": true,
+        "final_context_present": true,
+        "final_source_matches": true
+      },
+      "utility_disagreement": false
+    },
+    {
+      "task_id": "code_0027",
+      "reconstructed": {
+        "record_id": "g3_44affe473e535ea0f9e9b5357fe4daf014c926ed8b0f646f2dfdd945493f70d2",
+        "task_id": "code_0027",
+        "implementation": "reconstructed",
+        "completed": true,
+        "parse_success": true,
+        "utility_status": "valid",
+        "utility_success": false,
+        "utility_error_type": null,
+        "utility_error_message": null,
+        "call_order": [
+          "solver",
+          "reviewer",
+          "finalizer"
+        ],
+        "declared_roles_match": true,
+        "review_context_present": true,
+        "final_context_present": true,
+        "final_source_matches": true
+      },
+      "native": {
+        "record_id": "g3_da90c601b24ea0e29bdeb4248762e0dfc43270df804115ff989df909209fd06c",
+        "task_id": "code_0027",
+        "implementation": "native",
+        "completed": true,
+        "parse_success": true,
+        "utility_status": "valid",
+        "utility_success": false,
+        "utility_error_type": null,
+        "utility_error_message": null,
+        "call_order": [
+          "solver",
+          "reviewer",
+          "finalizer"
+        ],
+        "declared_roles_match": true,
+        "review_context_present": true,
+        "final_context_present": true,
+        "final_source_matches": true
+      },
+      "utility_disagreement": false
+    }
+  ],
+  "gate_passed": true,
+  "interpretation": "Small-sample functional calibration; not proof of full native equivalence. Native prompt scaffolding and task execution are intentionally preserved."
+}

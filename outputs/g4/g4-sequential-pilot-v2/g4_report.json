@@ -1,0 +1,151 @@
+{
+  "audit": {
+    "adopted_runs": 30,
+    "attack_errors": 0,
+    "attack_not_applicable": 0,
+    "attack_unknown": 0,
+    "attack_valid": 30,
+    "completed_runs": 29,
+    "errors": [],
+    "execution_errors": 0,
+    "experiment_ids": [
+      "g4-sequential-pilot-v2"
+    ],
+    "missing_runs": 0,
+    "observed_logical_runs": 30,
+    "ok": true,
+    "payload_not_injected": 0,
+    "planned_runs": 30,
+    "storage": {
+      "completed_runs": 29,
+      "errors": [],
+      "message_rows": 340,
+      "ok": true,
+      "run_rows": 30,
+      "unfinalized_attempts": []
+    },
+    "target_not_invoked": 0,
+    "unexpected_runs": 0,
+    "utility_errors": 0,
+    "utility_unknown": 1
+  },
+  "average_per_attempt_with_known_usage": {
+    "completion_tokens": 708.7,
+    "latency_ms": 21527.36837503334,
+    "llm_call_count": 3.0,
+    "prompt_tokens": 1864.4666666666667
+  },
+  "checks": {
+    "activation_recorded_100pct": true,
+    "audit_ok": true,
+    "code_parse_at_least_98pct": true,
+    "completion_at_least_95pct": true,
+    "duplicate_or_state_contamination_zero": true,
+    "math_parse_at_least_98pct": false,
+    "paid_api_cost_within_approved_budget": true,
+    "payload_injected_100pct": true,
+    "result_rows_100pct": true,
+    "target_invoked_100pct": true,
+    "unexplained_non_injection_zero": true
+  },
+  "cost": {
+    "approved_paid_api_budget_usd": 0.0,
+    "g5_gpt4o_mini_cost_estimate": null,
+    "model_policy": "bionic-local-development",
+    "note": "G4 uses the approved local model. G5 pricing, expanded final manifest, and provider seed support remain a separate pre-G5 decision.",
+    "paid_api_cost_usd": 0.0
+  },
+  "counts": {
+    "activation_observed": 30,
+    "attempt_rows": 30,
+    "completed_runs": 29,
+    "execution_failures": 0,
+    "observed_logical_runs": 30,
+    "payload_injected": 30,
+    "planned_logical_runs": 30,
+    "successful_executions": 30,
+    "target_invoked": 30
+  },
+  "environment": {
+    "commit": "077167b0bc1f79644f4737ea5aea6bbc39148e39",
+    "dirty": true,
+    "platform": "Linux-6.18.33.2-microsoft-standard-WSL2-x86_64-with-glibc2.35",
+    "python": "3.10.12"
+  },
+  "experiment_id": "g4-sequential-pilot-v2",
+  "gate": "G4",
+  "gate_pass": false,
+  "generated_at": "2026-09-10T14:53:14.774009+00:00",
+  "hierarchical": {
+    "estimated_increment_runs_using_development_manifest": 455,
+    "team_consensus_recorded": false,
+    "technical_decision": "not_eligible_gate_failed"
+  },
+  "parse_by_domain": {
+    "code": {
+      "rate": 1.0,
+      "successful_executions": 15,
+      "valid": 15
+    },
+    "math": {
+      "rate": 0.9333333333333333,
+      "successful_executions": 15,
+      "valid": 14
+    }
+  },
+  "rates": {
+    "activation_recording": 1.0,
+    "completion": 0.9666666666666667,
+    "payload_injected": 1.0,
+    "result_row_storage": 1.0,
+    "target_invoked": 1.0
+  },
+  "report_hash": "72a9a00caf1d08a3c328366d00821931c04d6016f1ad6d37050dad74976a2aa9",
+  "report_version": "g4-pilot-report-v1",
+  "thresholds": {
+    "activation_recording_rate": 1.0,
+    "completion_rate_min": 0.95,
+    "parse_rate_each_domain_min": 0.98,
+    "result_row_storage_rate": 1.0,
+    "unexplained_non_injection_max": 0
+  },
+  "total_tokens_all_known_attempts": 77195,
+  "usage_all_attempts": {
+    "completion_tokens": {
+      "known_rows": 30,
+      "total_rows": 30,
+      "value": 21261
+    },
+    "latency_ms": {
+      "known_rows": 30,
+      "total_rows": 30,
+      "value": 645821.0512510003
+    },
+    "llm_call_count": {
+      "known_rows": 30,
+      "total_rows": 30,
+      "value": 90
+    },
+    "prompt_tokens": {
+      "known_rows": 30,
+      "total_rows": 30,
+      "value": 55934
+    }
+  },
+  "workload_projection": {
+    "hierarchical_increment_if_same_run_count": {
+      "completion_tokens": 322458.5,
+      "latency_ms_serial_equivalent": 9794952.61064017,
+      "llm_calls": 1365.0,
+      "logical_runs": 455,
+      "prompt_tokens": 848332.3333333334
+    },
+    "sequential_representative_455": {
+      "completion_tokens": 322458.5,
+      "latency_ms_serial_equivalent": 9794952.61064017,
+      "llm_calls": 1365.0,
+      "logical_runs": 455,
+      "prompt_tokens": 848332.3333333334
+    }
+  }
+}

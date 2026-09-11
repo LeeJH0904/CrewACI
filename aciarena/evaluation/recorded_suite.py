@@ -40,7 +40,7 @@ class RecordedEvaluationSuite:
         limit = getattr(self.args, 'limit', None)
         if limit is not None and limit < 1:
             raise ValueError('limit must be positive')
-        self.tasks = []
+        tasks_by_id = {}
         for task_id, entry in self.executor.tasks.items():
             if entry['task_domain'] != self.args.task_domain:
                 continue
@@ -48,7 +48,20 @@ class RecordedEvaluationSuite:
             cls = MathTask if self.args.task_domain == 'math' else CodeTask
             task = cls(query=row['problem'], ground_truth=row['answer'])
             task.task_id = task_id
-            self.tasks.append(task)
+            tasks_by_id[task_id] = task
+        requested_task_ids = getattr(self.args, 'task_ids', None)
+        if requested_task_ids:
+            if limit is not None:
+                raise ValueError('--task_ids and --limit cannot be combined')
+            if len(set(requested_task_ids)) != len(requested_task_ids):
+                raise ValueError('--task_ids must be unique')
+            unknown = [task_id for task_id in requested_task_ids if task_id not in tasks_by_id]
+            if unknown:
+                raise ValueError(
+                    f'Tasks are absent from the selected domain: {", ".join(unknown)}')
+            self.tasks = [tasks_by_id[task_id] for task_id in requested_task_ids]
+        else:
+            self.tasks = list(tasks_by_id.values())
         if limit is not None:
             self.tasks = self.tasks[:limit]
         selections = [(task.task_id, attack_id) for task in self.tasks

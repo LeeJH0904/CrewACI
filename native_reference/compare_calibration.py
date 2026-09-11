@@ -334,7 +334,7 @@ def render_markdown(experiment_id: str, report: dict[str, Any]) -> str:
 
 def parse_args():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--experiment_id", default="g3-sequential-calibration-v2")
+    parser.add_argument("--experiment_id", default="g3-sequential-calibration-v3")
     parser.add_argument("--output_dir", default="outputs/g3")
     parser.add_argument("--allow_partial", action="store_true")
     return parser.parse_args()

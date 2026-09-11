@@ -17,7 +17,10 @@ TOP_LEVEL_KEYS = {
     'max_turn', 'normalizer', 'retry_policy', 'judge_policy', 'verifiers',
     'dependency_lock', 'dependency_checks', 'planned_runs',
 }
-UTILITY_VERIFIER_VERSION = 'isolated-math-v1/linux-x86_64-landlock-seccomp-v1'
+UTILITY_VERIFIER_VERSION = (
+    'isolated-math-v1/linux-x86_64-landlock-seccomp-v1/'
+    'disruption-nonanswer-resolution-v1'
+)
 
 
 class ConfigurationError(ValueError):

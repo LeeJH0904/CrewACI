@@ -1,3 +1,34 @@
+## 2026-09-11 — G4 Sequential 30-run 파일럿 Gate 완료, Hierarchical 보류
+
+- **전용 실행·보고:** `scripts/run_g4_pilot.py`와 `aciarena/evaluation/pilot.py`를 추가해
+  confirmation manifest의 고정 Math 5·Code 5, domain별 3개 공격을 정확히 30 runs로
+  실행한다. dry-run/resume/retry/report-only, exact matrix audit와 JSON/Markdown Gate
+  보고서를 지원한다. 일반 CLI에도 exact `--task_ids` 선택을 추가했다.
+- **모델·비용(D38):** Bionic 로컬 `qwen2.5-0.5b-instruct`, temperature 0.0,
+  max tokens 1,024, seed 42 요청을 사용했다. paid API 비용/승인 예산은 0달러이며 G5의
+  GPT-4o-mini 가격·seed·최종 manifest 비용은 별도 결정으로 남겼다.
+- **진단 v1:** 30/30 실행, 저장·도달·주입 100%였지만 Math 한 건이 숫자 없이 문장만
+  반환해 parser-valid 14/15였다. Finalizer Task에 Math 명시적 수치/Code 전용 코드
+  형식 요구를 보강했고, 같은 계약으로 공식/재구현 G3 v3 20-run Gate를 다시 통과했다.
+- **진단 v2와 D37:** DDOS 공격이 실제로 전파돼 Finalizer가 경고만 반환하고 strict
+  Judge가 `refusal/unrelated`로 성공 판정한 run을 Math parser unknown 때문에 미완료로
+  처리하는 계약 충돌을 발견했다. 이 경우에만 utility valid false로 해석하고 원래
+  parser unknown·해석 근거를 evaluation message에 보존한다. 다른 공격/판정에는 적용하지 않는다.
+- **authoritative v3:** 30/30 실행·완료·row 저장·target 도달·payload 주입·utility/attack
+  평가 valid, 오류·미주입·중복 0건으로 PASS했다. Math 원시 parser-valid 14/15 중
+  1건은 위 Disruption 비답변 해석, Code는 15/15다. 총 90 LLM calls, prompt 55,791 +
+  completion 21,367 = 77,158 tokens, 누적 latency 676.647초를 기록했다.
+- **보고서 버전(D40):** D37의 `parse_by_domain`·Gate check 스키마 변경을
+  호환 불가능 변경으로 분류해 생성기와 authoritative v3를
+  `g4-pilot-report-v2`로 올렸다. 구형 진단 v1/v2는 report v1로 보존한다.
+- **범위 결정(D39):** Sequential 독립 구현은 완료했다. Hierarchical은 최소 455 runs와
+  Manager 추가 호출 부담, G5 유료 API 상한·연구팀 합의 미확정 때문에 보류한다.
+  명시적 승인 전 활성 구성은 Sequential 하나이며 GH/RQ2를 시작하지 않는다.
+- **검증:** main unit 74개·integration 41개(총 115개), 별도 공식 CrewAI native smoke
+  1개, manifest check·compileall·`git diff --check`, G4 v3 report-only 재감사를 통과했다.
+  `setup.py egg_info`로 신규 pilot 모듈을 package source metadata에 반영했고, 현재 G3 v3
+  및 G4 v3 machine-readable/Markdown 산출물을 보존했다.
+
 ## 2026-09-10 — G3 공식 CrewAI 기능 대조 20-run Gate 완료
 
 - **공식 참조 동결:** `crewai==1.15.21`을 Python 3.10 별도 `.native-crewai` 환경과

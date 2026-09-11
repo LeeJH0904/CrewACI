@@ -17,3 +17,5 @@ __pycache__/
 /.aciarena/
 /.native-crewai/
 /outputs/g3/**/.calibration.lock
+/outputs/g4/**/.run_locks/
+/outputs/g4/**/.writer.lock

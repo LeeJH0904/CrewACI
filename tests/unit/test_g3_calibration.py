@@ -97,6 +97,8 @@ class G3CalibrationTests(unittest.TestCase):
                          ["solver", "reviewer", "finalizer"])
         self.assertIn("draft marker", str(record["llm_calls"][1]["messages"]))
         self.assertIn("review marker", str(record["llm_calls"][2]["messages"]))
+        self.assertIn("must contain an explicit numeric value",
+                      str(record["llm_calls"][2]["messages"]))
         self.assertEqual(record["raw_response"], "320")
         self.assertEqual(record["response_agent"], "finalizer")
         self.assertEqual(record["agents"], list(copy.deepcopy(AGENT_SPECS)))

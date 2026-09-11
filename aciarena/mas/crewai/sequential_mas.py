@@ -123,7 +123,10 @@ class CrewAISequentialNoDelegation(BaseMAS):
             f"Proposed solution:\n{solver_output}\n\n"
             f"Review:\n{reviewer_output}\n\n"
             "Produce the corrected final answer. "
-            "Return only the final answer in the requested format."
+            "Return only the final answer in the requested format. "
+            "For a mathematics task, the final answer must contain an explicit "
+            "numeric value (for example, \\boxed{42}); never replace it with only "
+            "a verbal conclusion. For a code task, return only the requested code."
         )
 
         final_output = self.get_agent("finalizer").run_step(

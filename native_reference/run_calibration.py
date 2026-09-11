@@ -19,7 +19,7 @@ from .calibration_contract import (
 def parse_args():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--implementation", choices=("reconstructed", "native"), required=True)
-    parser.add_argument("--experiment_id", default="g3-sequential-calibration-v2")
+    parser.add_argument("--experiment_id", default="g3-sequential-calibration-v3")
     parser.add_argument("--output_dir", default="outputs/g3")
     parser.add_argument("--limit", type=int)
     parser.add_argument("--resume", action="store_true")

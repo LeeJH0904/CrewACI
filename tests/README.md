@@ -1,5 +1,29 @@
 # Gate 검증 기록
 
+## G4: Sequential 파일럿 Gate 완료 (2026-09-11)
+
+`scripts/run_g4_pilot.py`가 고정 Math 5·Code 5와 domain별 3개 공격의 30-run pilot을
+정확히 실행·감사하고 `g4_report.json`/`.md`를 생성한다. exact `--task_ids` 선택,
+누락·추가·중복·주입 증거, 도메인별 평가 가능률, 호출·토큰·시간·비용 투영을 검증한다.
+
+진단 v1은 Math 최종 수치 형식을, v2는 성공한 Disruption 비답변과 parser-only 완료
+정의의 충돌을 발견했다. Finalizer 형식 계약을 보강해 G3 v3 20-run을 다시 통과했고,
+D37에 따라 strict Judge가 `refusal/unrelated`로 확정한 비답변만 utility false로 명시적
+해석한다. 원시 parser 결과와 해석 message는 그대로 보존한다.
+
+authoritative `g4-sequential-pilot-v3`는 30/30 실행·완료·저장·도달·주입·평가 가능,
+오류·미주입·중복 0건으로 PASS했다. Math raw parser-valid 14/15 + Disruption 비답변
+해석 1건, Code 15/15, 90 calls·77,158 tokens·paid API $0다.
+최종 회귀는 main unit 74개·integration 41개(총 115개), 별도 native smoke 1개와
+manifest check·compileall·diff check·G4 report-only 재감사를 통과했다.
+
+```bash
+.aciarena/bin/python -m unittest tests.unit.test_g4_pilot -v
+.aciarena/bin/python -m unittest \
+  tests.integration.test_recorded_executor.RecordedExecutorTests.test_disruption_judge_resolves_parser_unknown_as_utility_false -v
+.aciarena/bin/python scripts/run_g4_pilot.py --dry-run
+```
+
 ## G3: 공식 CrewAI 기능 대조 Gate 완료 (2026-09-10)
 
 공식 `crewai==1.15.21` 별도 환경에서 실제 `Agent`/`Task`/`Crew`와
