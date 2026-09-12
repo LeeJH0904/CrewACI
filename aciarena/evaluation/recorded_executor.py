@@ -31,6 +31,19 @@ SECRET_KEYS = {'api_key', 'api_token', 'access_token', 'authorization', 'passwor
 ATTACK_NOT_APPLICABLE = object()
 DISRUPTION_NONANSWER_RESOLUTION = 'valid_false_from_disruption_judge'
 
+# Attack verifiers whose verify() calls math-verify must run in the isolated
+# main-thread worker, never math_verify.verify() inside a ThreadPoolExecutor
+# worker (its POSIX signal timeout fails off the main thread and is silently
+# absorbed as false). Keyed by attack category, resolved to a worker kind by
+# (category, surface) so a new math attack cannot regress by omission.
+MATH_VERIFY_WORKER_KINDS = {
+    ('hijacking_answer_mapping', 'agent'): 'mapping_agent',
+    ('hijacking_answer_mapping', 'instruction'): 'mapping_instruction',
+    ('hijacking_math_invert', 'message'): 'math_invert',
+}
+MATH_VERIFY_ATTACK_CATEGORIES = frozenset(
+    category for category, _ in MATH_VERIFY_WORKER_KINDS)
+
 
 class CodeSandboxUnavailable(RuntimeError):
     pass
@@ -60,7 +73,11 @@ def verify_math(task, spec=None):
     kind = 'utility'
     source = 'aciarena/evaluation/task/math_task.py'
     if spec is not None:
-        kind = 'mapping_agent' if spec.surface == 'agent' else 'mapping_instruction'
+        try:
+            kind = MATH_VERIFY_WORKER_KINDS[(spec.attack_category, spec.surface)]
+        except KeyError as exc:
+            raise ValueError(
+                f'No isolated math worker kind for {spec.attack_category}/{spec.surface}') from exc
         source = spec.source
     worker = ROOT / 'aciarena/evaluation/math_verifier_worker.py'
     request = {'kind': kind, 'source_hash': spec.source_sha256 if spec else file_hash(source),
@@ -70,7 +87,7 @@ def verify_math(task, spec=None):
                             env={key: value for key, value in os.environ.items() if key in ('PATH', 'LANG', 'LC_ALL')})
     if result.returncode:
         if result.returncode in (-signal.SIGKILL, -signal.SIGXCPU):
-            return False
+            raise TimeoutError('Isolated math verifier exceeded its resource limit')
         raise ValueError('Isolated math verifier failed: ' + (result.stdout.strip() or 'worker terminated'))
     payload = json.loads(result.stdout)
     if spec is not None and payload.get('applicable') is False:
@@ -115,8 +132,11 @@ def verify_code(task):
         raise ValueError('Isolated Code verifier returned an invalid result') from exc
 
 
-def load_task_manifest():
-    manifest = json.loads((ROOT / 'manifests/tasks.json').read_text())
+def load_task_manifest(path=None):
+    path = Path(path) if path is not None else ROOT / 'manifests/tasks.json'
+    manifest = json.loads(path.read_text())
+    if manifest.get('manifest_version') not in {'g0-v1', 'g5-v1', 'g5-v2'}:
+        raise ValueError('Unsupported task manifest version')
     sources, tasks = {}, {}
     for dataset in manifest['datasets']:
         source = dataset['source']
@@ -135,10 +155,75 @@ def load_task_manifest():
     return manifest, tasks
 
 
+def recorded_configuration(model_config, judge_config, experiment_contract,
+                           task_manifest, catalog,
+                           utility_verifier_version=UTILITY_VERIFIER_VERSION):
+    """Build the exact public configuration snapshot used in RunIdentity."""
+    model = copy.deepcopy(model_config)
+    if not model.get('model_name') or model.get('provider') not in ('openai',):
+        raise ValueError('Explicit model_name and supported provider are required')
+    model.setdefault('temperature', 0.0)
+    model.setdefault('max_tokens', 1024)
+    model.setdefault('seed', 42)
+    sources = [
+        'aciarena/mas/crewai/sequential_mas.py',
+        'aciarena/mas/crewai/agents/crewai_agent.py',
+        'aciarena/mas/crewai/agents/solver_agent.py',
+        'aciarena/mas/crewai/agents/reviewer_agent.py',
+        'aciarena/mas/crewai/agents/finalizer_agent.py',
+        'aciarena/evaluation/recorded_executor.py',
+        'aciarena/mas/crewai/message_bus.py',
+        'aciarena/evaluation/records.py',
+        'aciarena/evaluation/run_writer.py',
+        'aciarena/attacks/catalog.py',
+        'aciarena/agent_components/llms/openai_llm.py',
+        'aciarena/evaluation/math_verifier_worker.py',
+        'aciarena/evaluation/recorded_suite.py',
+        'aciarena/evaluation/code_verifier_worker.py',
+        'aciarena/evaluation/normalizers.py',
+        'aciarena/mas/crewai/schemas.py',
+        'aciarena/evaluation/configuration.py',
+        'aciarena/evaluation/audit.py',
+        'aciarena/utils/factory.py',
+        'aciarena/agent_components/base_agent.py',
+        'aciarena/mas/base_mas.py',
+    ]
+    if experiment_contract.get('stage') == 'final':
+        sources.extend([
+            'scripts/g5/build_g5_manifests.py',
+            'scripts/g5/preflight_g5_provider.py',
+            'scripts/g5/run_g5_matrix.py',
+        ])
+    else:
+        sources.extend(['aciarena/evaluation/pilot.py', 'scripts/g4/run_g4_pilot.py'])
+    config = {
+        'model': public_config(model),
+        'judge': public_config(judge_config),
+        'experiment_contract': experiment_contract,
+        'task_manifest_hash': canonical_hash(task_manifest),
+        'attack_manifest_hash': catalog.manifest_hash,
+        'dependency_lock_hash': file_hash('requirements.lock'),
+        'sources': {path: file_hash(path) for path in sources},
+        'dependencies': {
+            name: version(name)
+            for name in ['openai', 'math-verify', 'sympy', 'human_eval']},
+        'normalizer': NORMALIZER_VERSION,
+        'max_turn': 1,
+        'utility_verifier': utility_verifier_version,
+        'seed_support': experiment_contract.get('seed_policy', {}).get(
+            'status', 'unverified'),
+        'usage_policy': (
+            'Agent+Judge SDK invocations; known token lower bounds retained; '
+            'missing-usage calls counted explicitly'),
+        'retry_policy': 'sdk-max-retries-0/explicit-transient-provider/max-3-attempts-v2',
+    }
+    return model, config
+
+
 class RecordedTaskExecutor:
     def __init__(self, args, judge_config, *, writer=None, catalog=None,
                  utility_verifier=None, utility_verifier_version=None,
-                 experiment_contract=None):
+                 experiment_contract=None, task_manifest_path=None):
         if args.mas != 'crewai_seq_nodeleg' or getattr(args, 'defense', 'none') != 'none':
             raise ValueError('Recorded execution currently supports Sequential without defenses')
         if getattr(args, 'attack_mode', 'continuous') != 'continuous':
@@ -159,7 +244,7 @@ class RecordedTaskExecutor:
         self.experiment_id = experiment
         self.catalog = catalog if catalog is not None else AttackCatalog()
         self.writer = writer if writer is not None else RunWriter(Path(args.output_dir) / experiment)
-        self.task_manifest, self.tasks = load_task_manifest()
+        self.task_manifest, self.tasks = load_task_manifest(task_manifest_path)
         requested = getattr(args, 'attack_ids', None)
         self.attack_ids = tuple(requested if requested else (['none'] if args.suite == 'benign' else []))
         if not self.attack_ids or len(set(self.attack_ids)) != len(self.attack_ids):
@@ -184,38 +269,14 @@ class RecordedTaskExecutor:
         return type(exc).__name__, text
 
     def _configuration(self, model_config):
-        model = copy.deepcopy(model_config)
-        if not model.get('model_name') or model.get('provider') not in ('openai',):
-            raise ValueError('Explicit model_name and supported provider are required')
-        model.setdefault('temperature', 0.0)
-        model.setdefault('max_tokens', 1024)
-        model.setdefault('seed', 42)
-        sources = ['aciarena/mas/crewai/sequential_mas.py', 'aciarena/mas/crewai/agents/crewai_agent.py',
-                   'aciarena/mas/crewai/agents/solver_agent.py', 'aciarena/mas/crewai/agents/reviewer_agent.py',
-                   'aciarena/mas/crewai/agents/finalizer_agent.py', 'aciarena/evaluation/recorded_executor.py',
-                   'aciarena/mas/crewai/message_bus.py', 'aciarena/evaluation/records.py',
-                   'aciarena/evaluation/run_writer.py', 'aciarena/attacks/catalog.py',
-                   'aciarena/agent_components/llms/openai_llm.py',
-                   'aciarena/evaluation/math_verifier_worker.py', 'aciarena/evaluation/recorded_suite.py',
-                   'aciarena/evaluation/code_verifier_worker.py',
-                   'aciarena/evaluation/normalizers.py', 'aciarena/mas/crewai/schemas.py',
-                   'aciarena/evaluation/configuration.py',
-                   'aciarena/evaluation/audit.py',
-                   'aciarena/evaluation/pilot.py',
-                   'scripts/run_g4_pilot.py',
-                   'aciarena/utils/factory.py', 'aciarena/agent_components/base_agent.py', 'aciarena/mas/base_mas.py']
-        config = {'model': public_config(model), 'judge': public_config(self.judge_config),
-                  'experiment_contract': self.experiment_contract,
-                  'task_manifest_hash': canonical_hash(self.task_manifest),
-                  'attack_manifest_hash': self.catalog.manifest_hash,
-                  'dependency_lock_hash': file_hash('requirements.lock'),
-                  'sources': {path: file_hash(path) for path in sources},
-                  'dependencies': {name: version(name) for name in ['openai', 'math-verify', 'human_eval']},
-                  'normalizer': NORMALIZER_VERSION, 'max_turn': 1,
-                  'utility_verifier': self.utility_verifier_version, 'seed_support': 'unverified',
-                  'usage_policy': 'Agent+Judge SDK method invocations; unavailable usage=null',
-                  'retry_policy': 'explicit-only/transient-provider/max-3-attempts-v1'}
-        return model, config
+        return recorded_configuration(
+            model_config,
+            self.judge_config,
+            self.experiment_contract,
+            self.task_manifest,
+            self.catalog,
+            self.utility_verifier_version,
+        )
 
     def execute(self, mas_config, task, *, attack_id, task_id=None, repetition=1,
                 phase='pilot', resume=False, retry=False):
@@ -338,7 +399,9 @@ class RecordedTaskExecutor:
                         else:
                             value = verify_math(task)
                     else:
-                        if spec.attack_category == 'hijacking_answer_mapping':
+                        if spec.attack_category in MATH_VERIFY_ATTACK_CATEGORIES:
+                            # math-verify attack verifiers run in the isolated
+                            # main-thread worker, not in this pool thread.
                             value = verify_math(task, spec)
                         else:
                             trace.attach_llm('attack_judge', attack.llm_judge, judge=True)
@@ -397,7 +460,9 @@ class RecordedTaskExecutor:
                            response_agent=result['response_agent'] if result is not None else None,
                            ground_truth=task.get_gt(), **evaluations, status=status, error_type=error_type,
                            error_message=error_message, llm_call_count=trace.call_count, prompt_tokens=trace.prompt_tokens,
-                           completion_tokens=trace.completion_tokens, latency_ms=(time.monotonic() - clock) * 1000,
+                           completion_tokens=trace.completion_tokens,
+                           usage_missing_calls=trace.usage_missing_calls,
+                           latency_ms=(time.monotonic() - clock) * 1000,
                            started_at=started, finished_at=attempt_now())
         self.writer.append_run(record)
         return record

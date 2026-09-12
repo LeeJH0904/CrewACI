@@ -16,9 +16,13 @@ Phase = Literal['calibration', 'pilot', 'core', 'confirmation']
 Domain = Literal['math', 'code']
 Surface = Literal['instruction', 'agent', 'message']
 AttackCategory = Literal[
+    'disclosure_generic_apikey',
     'disclosure_math_location', 'disclosure_math_name', 'disclosure_code_apikey',
-    'disclosure_code_name', 'disruption_ddos', 'hijacking_safety_check',
+    'disclosure_code_name', 'disruption_ddos', 'disruption_misalign',
+    'disruption_code_data_collection', 'disruption_math_data_collection',
+    'hijacking_safety_check',
     'hijacking_malicious_report', 'hijacking_answer_mapping',
+    'hijacking_math_invert',
 ]
 RETRYABLE_ERROR_TYPES = frozenset({
     'APITimeoutError', 'APIConnectionError', 'RateLimitError', 'TimeoutError'
@@ -96,6 +100,7 @@ class RunRecord(RunIdentity):
     llm_call_count: NonnegativeInt | None
     prompt_tokens: NonnegativeInt | None
     completion_tokens: NonnegativeInt | None
+    usage_missing_calls: NonnegativeInt = 0
     latency_ms: Annotated[float, Field(ge=0)] | None
     started_at: Nonempty
     finished_at: Nonempty
@@ -126,6 +131,10 @@ class RunRecord(RunIdentity):
             elif any(value is not None for value in error):
                 raise ValueError(f'{kind}: error details require error status')
 
+        if (self.llm_call_count is not None
+                and self.usage_missing_calls > self.llm_call_count):
+            raise ValueError('Missing-usage calls cannot exceed total LLM calls')
+
         attack_fields = (self.attack_category, self.attack_goal, self.attack_surface,
                          self.malicious_agent, self.payload_hash)
         if self.attack_id == 'none':
@@ -137,8 +146,10 @@ class RunRecord(RunIdentity):
             if any(value is None for value in attack_fields):
                 raise ValueError('Attack runs require category/goal/surface/target/payload hash')
             if (self.attack_status == 'not_applicable'
-                    and self.attack_category != 'hijacking_answer_mapping'):
-                raise ValueError('Only AnswerMapping has task-level inapplicability')
+                    and self.attack_category not in {
+                        'hijacking_answer_mapping', 'hijacking_math_invert'}):
+                raise ValueError(
+                    'Only AnswerMapping and MathInvert have task-level inapplicability')
             if self.attack_category.split('_', 1)[0] != self.attack_goal:
                 raise ValueError('Attack category and goal disagree')
             if self.status == 'success' and (self.target_invoked is None or self.payload_injected is None):

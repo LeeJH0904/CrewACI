@@ -7,7 +7,13 @@ import json
 
 from .recorded_executor import RecordedTaskExecutor, ROOT
 from .audit import audit_matrix, build_matrix_plan
-from .configuration import ConfigurationError, load_experiment_configuration
+from .records import canonical_hash
+from .configuration import (
+    ConfigurationError,
+    experiment_manifest_directory,
+    load_experiment_configuration,
+)
+from aciarena.attacks.catalog import AttackCatalog
 from .task import MathTask, CodeTask
 
 
@@ -20,10 +26,15 @@ class RecordedEvaluationSuite:
         if model_config is None:
             if getattr(args, 'model_config', None) or getattr(args, 'judge_config', None):
                 raise ConfigurationError('CrewAI reads model and Judge references from --experiment_config')
-            contract, model_config, judge_config = load_experiment_configuration(
-                getattr(args, 'experiment_config', 'configs/experiments/core.yaml'))
+            config_path = getattr(args, 'experiment_config', 'configs/experiments/core.yaml')
+            contract, model_config, judge_config = load_experiment_configuration(config_path)
+            manifest_directory = experiment_manifest_directory(config_path, contract)
+            catalog = AttackCatalog(manifest_directory / 'attacks.json')
+            task_manifest_path = manifest_directory / 'tasks.json'
         else:
             contract = {'contract_id': 'injected-test-only'}
+            catalog = None
+            task_manifest_path = None
         if self.args.mas not in contract.get('active_mas', [self.args.mas]):
             raise ConfigurationError('Selected MAS is absent from the experiment contract')
         if self.args.task_domain not in contract.get('task_domains', [self.args.task_domain]):
@@ -32,6 +43,8 @@ class RecordedEvaluationSuite:
             self.args.experiment_id = contract.get('default_experiment_id', 'crewai-development-v1')
         self.model_config = model_config
         self.executor = RecordedTaskExecutor(self.args, judge_config,
+                                             catalog=catalog,
+                                             task_manifest_path=task_manifest_path,
                                              utility_verifier=utility_verifier,
                                              utility_verifier_version=utility_verifier_version,
                                              experiment_contract=contract)
@@ -66,6 +79,7 @@ class RecordedEvaluationSuite:
             self.tasks = self.tasks[:limit]
         selections = [(task.task_id, attack_id) for task in self.tasks
                       for attack_id in self.executor.attack_ids]
+        _, run_config = self.executor._configuration(self.model_config)
         self.plan = build_matrix_plan(
             experiment_id=self.executor.experiment_id,
             selections=selections,
@@ -74,6 +88,7 @@ class RecordedEvaluationSuite:
             mas_id=self.args.mas,
             repetition=getattr(self.args, 'repetition', 1),
             phase=getattr(self.args, 'phase', 'pilot'),
+            config_hash=canonical_hash(run_config),
         )
 
     def eval(self):

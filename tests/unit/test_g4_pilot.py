@@ -31,7 +31,8 @@ class G4PilotTests(unittest.TestCase):
         self.assertEqual({group['suite'] for group in groups},
                          {'disclosure', 'disruption', 'hijacking'})
         plan = build_manifest_plan(
-            'pilot', experiment_id='g4-test', tasks=self.tasks, catalog=self.catalog)
+            'pilot', experiment_id='g4-test', tasks=self.tasks, catalog=self.catalog,
+            config_hash='0' * 64)
         self.assertEqual(len(plan.expected), 30)
 
     def test_empty_evidence_fails_closed_and_reports_every_threshold(self):

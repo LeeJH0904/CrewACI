@@ -60,6 +60,16 @@ class ConfigurationTests(unittest.TestCase):
             llm.call_llm([{'role': 'user', 'content': 'test'}])
         create.assert_called_once()
 
+    def test_openai_sdk_transport_retries_are_disabled(self):
+        with patch('aciarena.agent_components.llms.openai_llm.OpenAI') as sync, \
+                patch('aciarena.agent_components.llms.openai_llm.AsyncOpenAI') as async_client:
+            OpenAILLM().from_config({
+                'api_key': 'synthetic-test-key',
+                'base_url': 'http://localhost:1234/v1',
+            })
+        self.assertEqual(sync.call_args.kwargs['max_retries'], 0)
+        self.assertEqual(async_client.call_args.kwargs['max_retries'], 0)
+
     def test_openai_judge_uses_strict_json_schema_response_format(self):
         llm = OpenAILLM(model_name='offline')
         response = SimpleNamespace(

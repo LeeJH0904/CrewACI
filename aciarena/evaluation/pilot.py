@@ -103,8 +103,15 @@ def _git_state():
 
 def build_g4_report(writer, *, experiment_id, tasks, catalog):
     """Audit the fixed 30-run pilot and calculate every G4 threshold."""
+    experiment_hashes = {
+        record.config_hash for record in writer.read_runs()
+        if record.experiment_id == experiment_id
+    }
+    config_hash = (next(iter(experiment_hashes))
+                   if len(experiment_hashes) == 1 else '0' * 64)
     plan = build_manifest_plan(
-        'pilot', experiment_id=experiment_id, tasks=tasks, catalog=catalog)
+        'pilot', experiment_id=experiment_id, tasks=tasks, catalog=catalog,
+        config_hash=config_hash)
     audit = audit_matrix(
         writer, plan, tasks, catalog, allow_additional=False, require_injection=True)
     records = writer.read_runs()

@@ -1,5 +1,62 @@
 # Gate 검증 기록
 
+## 과거 Gate 재현 경계
+
+G5-v2 준비 뒤 공유 공격·실행·감사 source와 script 경로가 변경됐다. 따라서 현재
+working tree에서 G0~G4의 과거 config snapshot/report를 in-place 재감사하면 drift를
+보고하는 것이 정상이다. 당시 hash 계약으로 재생성·재감사할 때는 G4 완료 커밋
+`a1d662eddbf8acfc1d319686f24fd94fff3e2806`(`a1d662e`)을 별도 checkout/worktree에서
+사용한다. 현재 코드로 과거 report를 덮어써서 검사를 통과시키지 않는다.
+
+## G5-v2 재수집 준비 회귀 (2026-09-11)
+
+MathInvert를 파싱된 전체 수학 객체의 가법 역원으로 고정하고 Math 39개 전수에서 적용
+가능성을 검사했다. 분수·복소수·각도·±해집합·행렬을 포함해 35개는 구별되는 반전
+목표를 만들며, 텍스트 parity·동치 방정식·대칭 구간·0의 4개만 비적용이다. v2 manifest의
+비적용 ID와 실제 알고리즘이 일치하는지 회귀로 고정했다.
+
+matrix key의 config_hash 격리, SDK `max_retries=0`, 알려진 token 하한 보존과
+`usage_missing_calls`, 불완전 usage의 유료 실행 차단도 검사한다. `g5-v2` manifest check,
+1,056행 dry-run, compileall·dependency·diff 검사를 통과했다. main unit 90개와
+권한이 필요한 Code/HumanEval 격리를 포함한 integration 42개가 통과했다. provider
+preflight와 2차 벤치마크는 실행하지 않았다.
+
+## G5 실제 matrix 및 MathInvert erratum 회귀 (2026-09-11)
+
+> 이 절의 v1 실행 수치와 검증은 당시 개발 이력이다. D53에 따라 v1 config와
+> `outputs/g5/`가 삭제되어 현재 workspace에는 원본·rescore artifact가 없으며,
+> v2 논문 입력으로 사용하지 않는다.
+
+실제 `gpt-4o-mini-2024-07-18` 실행으로 1,056/1,056 계획 행을 관측했고 strict 완료
+1,052건을 얻었다. 빈 Math 응답 3건과 provider 호출 전 운영 중단 1건은 unknown/error로
+보존했다. `tests/unit/test_g5_math_invert_rescore.py` 2개는 worker-thread signal 결함의
+영향을 받은 MathInvert 응답을 main-thread verifier가 성공/실패로 올바르게 구분하는지
+검사한다. 재판정은 provider 호출을 하지 않고 append-only 원본을 수정하지 않는다.
+최종 전체 회귀는 unit 85개·integration 42개, 총 127개 PASS다. 제한 sandbox에서
+HumanEval multiprocessing 로컬 소켓이 차단돼 integration 3개가 환경 오류를 냈지만,
+호스트 권한의 동일 42개 재실행은 모두 통과했다.
+
+## G5 최종 실행 계약 준비 이력 (2026-09-11)
+
+G0 개발 manifest를 보존한 채 `manifests/g5/`에 기존 고유 공격 class 22개를 모두
+동결했다. Math 13·Code 14 attack ID, 정상 69·핵심 공격 927·확인 추가 반복 60의
+정확한 1,056-run 계획을 검사한다. 최종 config는 GPT-4o-mini snapshot·seed 요청·가격·
+2달러 실행 상한을 고정하고, preflight 실패 시 유료 실행을 fail-closed로 거부한다.
+
+```bash
+.aciarena/bin/python scripts/build_g5_manifests.py --check
+.aciarena/bin/python scripts/run_g5_matrix.py --stage smoke
+.aciarena/bin/python -m unittest tests.unit.test_g5 -v
+```
+
+준비 당시 provider preflight는 `AuthenticationError`였으며 credential/provider 원문을
+artifact에 남기지 않았다. 이 절은 **G5 실행 전 준비 시점**의 회귀 기록이다.
+G5 변경 뒤 main unit 83개·integration 42개, 총 125개가 통과했다. G5의 고유 22개
+class와 Math/Code 27개 지원 조합은 모두 mock 생성·주입·target 도달·평가 기록을
+통과했다. 단계별 8/69/507/420/60 계획, 기본 20-run 소배치, 완료 batch 건너뛰기,
+full-matrix 추가 opt-in과 유료 실행 잠금도 검사했다. G0/G5 manifest check, G5
+dry-run, compileall과 diff check도 통과했으며 실제 G5 API 호출은 0회다.
+
 ## G4: Sequential 파일럿 Gate 완료 (2026-09-11)
 
 `scripts/run_g4_pilot.py`가 고정 Math 5·Code 5와 domain별 3개 공격의 30-run pilot을

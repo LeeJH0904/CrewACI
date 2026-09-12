@@ -32,6 +32,7 @@ class MatrixAuditTests(unittest.TestCase):
             tasks=self.tasks,
             catalog=self.catalog,
             phase='core',
+            config_hash=self.record().config_hash,
         )
 
     def record(self, **changes):
@@ -97,7 +98,7 @@ class MatrixAuditTests(unittest.TestCase):
         config_drift = audit_matrix_records(
             self.plan(), [record, drift], [self.evidence(record), self.evidence(drift)],
             self.tasks, self.catalog)
-        self.assertTrue(any(error.startswith('config_or_identity_drift:')
+        self.assertTrue(any(error.startswith('unexpected_runs:')
                             for error in config_drift['errors']))
 
         additional = self.record(task_id='math_0002')
@@ -155,6 +156,7 @@ class MatrixAuditTests(unittest.TestCase):
             tasks=self.tasks,
             catalog=self.catalog,
             phase='core',
+            config_hash=record.config_hash,
         )
         evidence = MessageRecord(
             run_id=record.run_id,
@@ -244,6 +246,7 @@ class MatrixAuditTests(unittest.TestCase):
                     experiment_id='planned-development',
                     tasks=self.tasks,
                     catalog=self.catalog,
+                    config_hash='0' * 64,
                 )
                 self.assertEqual(len(plan.expected), count)
 

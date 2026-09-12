@@ -38,6 +38,7 @@ dependency_checks:
   - PyYAML
   - datasets
   - math-verify
+  - sympy
   - human_eval
 planned_runs:
   core_attacks: 306

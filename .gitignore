@@ -19,3 +19,5 @@ __pycache__/
 /outputs/g3/**/.calibration.lock
 /outputs/g4/**/.run_locks/
 /outputs/g4/**/.writer.lock
+/outputs/g5/**/.run_locks/
+/outputs/g5/**/.writer.lock

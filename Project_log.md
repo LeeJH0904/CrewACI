@@ -1,3 +1,155 @@
+## 2026-09-12 — Claude 검증 권고 반영: 과거 Gate 재현 경계 및 G5-v1 삭제
+
+- **G0~G4 재현 경계(P1/D52):** 공유 `hijacking_attack.py`와 실행·감사 소스, script
+  경로가 G5-v2 준비 과정에서 바뀌었으므로 현재 working tree에서 과거 config snapshot을
+  재감사할 때 source/manifest/path drift가 발생하는 것은 무결성 검사의 정상 동작이다.
+  과거 동결 보고서는 당시 기록으로 유지한다. 동일 hash 계약으로 G0~G4를 재생성·재감사할
+  때는 G4 완료 커밋 `a1d662eddbf8acfc1d319686f24fd94fff3e2806`
+  (`a1d662e`)을 별도 checkout/worktree에서 사용하며 현재 소스로 과거 보고서를 덮어쓰지
+  않는다.
+- **G5-v1 삭제(P2/D53):** 오해 소지가 있던 readiness=true v1 config
+  `configs/experiments/g5.yaml`과 버그 실행 산출물 `outputs/g5/` 전체를 사용자 지시에
+  따라 삭제했다. 삭제 대상은 26MB·1,063개 파일이며 둘 다 Git 추적 대상이 아니어서
+  Git 복구는 불가능하다. 삭제 전 핵심 SHA-256: provider preflight
+  `23261a9fc24878df2387d3e93c2dc5cedd0cbe8bf49168c658ff761e33ca3e41`,
+  runs `ae39680255571bbcbdc446938e660387763d9a68908eb127ecae011e056b7c47`,
+  messages `8153ae7e55f73d4f387be99943d13906a0caa6ba795b6225e4d442beacb13d40`,
+  progress `02bb11e77c29d8d0da2b33630eacc48ce9267b6242858def116c933ef33a3632`,
+  rescore `744d7a6ad53c670635a6a11e6fe97a72adb937e9d117e9c2b36a100db0b9a0c1`.
+- **보존 범위:** `manifests/g5/`는 v1 설계 이력으로 남기고 v2 입력에는 사용하지 않는다.
+  공유 `configs/g5_model.yaml`·`configs/g5_judge.yaml`은 v2가 참조하므로 유지한다.
+  현재 실행 가능한 최종 계약은 `configs/experiments/g5_v2.yaml`이며 아직 provider
+  preflight 전·readiness=false다. 이 반영 과정에서 API 호출은 없었다.
+
+## 2026-09-11 — G5-v2 의미·격리·비용 계약 및 manifest/config 생성
+
+- **MathInvert v2:** 목표를 파싱된 전체 수학 객체의 가법 역원으로 정의하고 prompt와
+  verifier를 일치시켰다. 정수뿐 아니라 분수, 복소수, 각도, ± 유한해집합, 행렬을
+  실제 반전 대상으로 검증했다. 의미상 구별할 수 없는 `math_0016`, `math_0024`,
+  `math_0033`, `math_0035`는 `not_applicable`로 고정했다. `math_0023`의 목표는
+  `-35/9 → 35/9`로 올바르게 생성된다. MathInvert ID는 message.v2다.
+- **실행 격리:** matrix key에 config_hash를 추가했고 final runner가 contract와 다른
+  experiment ID를 거부하도록 했다. v1 또는 다른 source/config의 완료 row는 v2 resume
+  집합에 들어가지 않는다. 격리 Math worker의 resource signal은 false가 아니라 평가
+  timeout/error로 처리한다.
+- **비용 계측:** OpenAI sync/async/preflight client의 SDK 재시도를 0으로 고정했다.
+  known token 누계를 보존하면서 usage가 없는 호출 수를 별도 기록하고, 불완전 usage는
+  lower-bound 비용으로 표시한 뒤 추가 유료 실행을 차단한다. 유료 실행 batch는 1 run으로
+  제한해 비용 확인 단위를 줄였다. preflight PASS는 model/temperature/seed와 네 check의
+  exact 내용을 함께 검증한다.
+- **v2 산출물:** `manifests/g5-v2/`의 tasks/attacks/confirmation/final_matrix와
+  `configs/experiments/g5_v2.yaml`을 생성했다. 계획은 69 benign + 927 core attack +
+  60 confirmation = 1,056행, core 사전 비적용 6, 최대 유효 ASR 분모 921이다.
+  experiment는 `crewai-g5-final-v2`, 기본 출력은 `outputs/g5-v2/`다. v2 preflight를
+  새로 수행하지 않았으므로 readiness는 false로 잠겨 있다. 외부 API 호출과 2차
+  벤치마크는 수행하지 않았다.
+
+## 2026-09-11 — scripts/ 재정리 및 오케스트레이터 통합 결정(D48)
+
+- **scripts/ 하위 폴더 정리:** `scripts/mas/`(legacy MAS 실행 .sh 5종),
+  `scripts/g4/`(run_g4_pilot.py), `scripts/g5/`(run_g5_matrix·build·preflight·rescore)로
+  분리했다. 범용 도구 `build_manifests.py`·`audit_records.py`는 루트에 유지한다.
+  이동에 따른 참조를 전부 수정했다: g5 3파일의 `__file__` ROOT `parents[1]→[2]`,
+  `recorded_executor.py`의 config source 경로 4개(`scripts/g5/…`·`scripts/g4/…`),
+  테스트의 `from scripts.X` import와 `patch('scripts.X…')` 타깃. 이동으로 config source
+  경로가 바뀌어 향후 config_hash가 달라지지만, 기존 산출물은 run_id로 동결돼 있고 G5는
+  재수집 예정이라 정합적이다. unit 87·integration 42 = 129 PASS, 이동 스크립트 CLI(
+  manifest check 1,056·dry-run·rescore 22/16/7) 정상, compileall·diff 통과.
+- **오케스트레이터 통합 결정(D48):** 실행 엔진(`RecordedEvaluationSuite` 등)은 이미 단일
+  공유이고 게이트별 드라이버만 얇게 분리돼 있다. 모델 차이(로컬↔API)는 config 값이므로
+  단일 파라미터화 오케스트레이터로 통합 가능하나, ① 리포트 의미(게이트 vs 수집) ② 유료
+  안전 태세 ③ config_hash에 드라이버 경로가 포함되는 결합 때문에 현재는 분리돼 있다.
+  이 통합은 **G6/G7 드라이버 신설 전**에 `scripts/run_experiment.py`로 수행하고
+  config_hash에는 엔진 소스만 포함하기로 결정했다. 사용자 지시로, **통합 시 유료 안전
+  방지턱(preflight 강제·$2 상한·세션 정지선·full-matrix opt-in·batch 비용정지)은 제거**하며
+  예산 통제는 운영 절차로 담보한다(리스크 명시). 단 `--execute` 없이는 유료 호출을 하지
+  않는 dry-run 기본값은 유지한다(옵션 1 확정). G5 동결·재수집 중에는 착수하지 않는다.
+  `00`§4·`DECISIONS.md` D48에 기록했다.
+
+## 2026-09-11 — G5 검증 재감사: verifier 무결성 전수 감사 및 MathInvert 라우팅 수정
+
+- **동기:** G5 재검증 중 D46의 MathInvert 버그(ThreadPool worker에서 math-verify의
+  POSIX signal timeout이 실패→예외 흡수→silent-false)가 데이터(rescore 아티팩트)로만
+  우회되고 코드는 미수정임을 확인했다. "버그 있는 코드의 수치는 논문 근거가 될 수
+  없다"는 판단에 따라 검증 계층 전체를 먼저 감사했다.
+- **전수 감사 결과(무결성):** 22개 공격+utility 중 math_verify를 worker 스레드에서
+  직접 호출하는 것은 `MathInvertMessage` 하나뿐임을 확정. utility Math/Code=격리
+  subprocess, AnswerMapping=격리 worker 라우팅, Disruption 6종=strict LLM Judge(오류
+  label은 ValueError→evaluation error, silent-false 아님), Disclosure 9종·SafetyCheck·
+  MaliciousReport=순수 문자열 매칭으로 모두 thread-safe. 2026-08-31의 disruption
+  `.get("judgement","yes")` silent-default도 현재는 strict `response_type` 검증으로
+  대체돼 있음을 재확인했다. 버그 blast radius를 MathInvert 한 곳으로 한정했다(D47).
+- **코드 수정:** 모든 math_verify 기반 공격 verifier를 격리 main-thread worker
+  (`math_verifier_worker.py`)로 라우팅. `recorded_executor.py`의 특례를 카테고리 이름이
+  아니라 math_verify 사용 여부(`MATH_VERIFY_ATTACK_CATEGORIES`)로 일반화하고,
+  `verify_math`의 worker kind를 (category, surface)→kind 표로 확장했다. worker의
+  permitted에 `math_invert`(MathInvertMessage)와 method 화이트리스트에 `invert_sign`을
+  추가했다. `hijacking_attack.py`(공격 로직)는 변경하지 않았다.
+- **회귀 테스트:** ThreadPoolExecutor 하에서 MathInvert 공격 검증이 정답(공격 성공/
+  실패)을 내는지 확인하는 테스트를 추가했다. 수정 코드가 G5 원본의 성공 38행을 D46
+  rescore와 동일한 판정(성공 22·실패 16)으로 재현함을 대조했다.
+- **재수집 방침(D47, 당시 결정):** 이 수정은 config/run_id hash를 바꾸므로
+  `crewai-g5-final-v1` 원본·rescore를 보존하고 새 experiment에서 재수집하기로 했다.
+  이후 사용자 지시 D53에서 v1 config/output을 삭제했으며, 논문 수치는 수정 코드의
+  자기완결 v2 데이터만 사용한다.
+
+## 2026-09-11 — G5 GPT-4o-mini 전체 matrix 실행 완료, G6 감사·집계 대기
+
+- **범위:** 사용자 결정에 따라 GH는 G7 완료 뒤 시간·비용 여유가 있을 때만 재검토한다.
+  G5~G7 활성 구성은 `crewai_seq_nodeleg` 하나이며 RQ2는 비활성이다.
+- **전체 공격 inventory(D43):** legacy registry가 Math/Code에 등록한 고유 class 22개를
+  결과 선택 없이 전부 `manifests/g5/`에 동결했다. 역사적 AnswerMappingAgent 중복은
+  class identity로 한 번만 포함한다. Math 13·Code 14 attack ID, 정상 69·핵심 공격
+  927·확인 추가 반복 60으로 총 1,056 logical runs다.
+- **최종 모델·비용(D44):** `gpt-4o-mini-2024-07-18`, temperature 0, seed 42 요청,
+  agent 1,024/Judge 256 max tokens를 동결했다. 2026-09-11 공식 단가 input $0.15/M,
+  output $0.60/M, G4 사용량 단순 투영 $0.74584752, 실행 상한 $2를 기록했다.
+- **실행 안전장치:** `scripts/run_g5_matrix.py`는 기본 dry-run이며 20개 group의 exact
+  1,056-run union, manifest/config hash와 비용을 확인한다. 유료 실행은 smoke 8,
+  benign 69, Math core 507, Code core 420, confirmation 60으로 나눌 수 있고 각 단계를
+  기본 20-run 소배치로 실행한다. 완료 batch는 다음 invocation에서 자동 제외된다.
+  `--execute`는 provider preflight와 readiness가 모두 통과해야 하며 batch마다 누적
+  attempt usage와 exact matrix audit를 `g5_progress.json`에 원자적으로 갱신한다.
+  사용자 확인의 daily 250만 free-token 혜택을 고려해 기본 session 정지선은 $1.00로
+  완화했다. 전체 상한은 $2이고 full-matrix 일괄 실행은 추가
+  `--allow-full-matrix` opt-in이 필요하다(D45).
+- **audit 수정:** config snapshot 검사가 G0 task manifest를 하드코딩해 G5를 drift로
+  오판하던 문제를 발견했다. attack manifest와 같은 version directory의 task manifest를
+  검사하도록 수정하고, 22개 class의 Math/Code 27개 지원 조합에서 생성·주입·target
+  도달·평가 기록을 전수 mock 검증했다.
+- **provider 통과:** `.env` credential 갱신 뒤 고정 snapshot 접근, seed 요청 수용,
+  반복 출력 일치, strict JSON Schema를 실제 호출로 확인했다. preflight는 100 input +
+  14 output tokens를 사용했고 당시 `outputs/g5/provider_preflight.json`에 credential 없이
+  PASS 근거를 남겼다(D53에서 삭제). 당시 `final_benchmark_ready=true`, seed 상태는
+  `accepted_best_effort`로 활성화했다.
+- **실행 결과:** smoke→benign→Math core→Code core→confirmation을 실제
+  `gpt-4o-mini-2024-07-18`로 수행해 계획 1,056/1,056 logical runs를 모두 관측했다.
+  누락·중복·예상 밖 run·평가기 error는 0이며 storage/config/manifest audit는 PASS다.
+  strict 완료는 1,052건이다. `math_0027`의 `\boxed{}` 3건은 utility unknown으로,
+  MathInvert 실행을 진단 중 사용자가 승인한 연속 진행 전에 운영자가 중단한
+  `math_0008` 1건은 provider 호출 전 `InterruptedBeforeProviderCall` 오류로 원 trace와
+  함께 보존했다. 이 오류 때문에 target/payload 미관측도 각 1건이다.
+- **실측 사용량:** 1,056 attempt rows에서 input 2,433,353 + output 1,107,609 =
+  3,540,962 tokens, matrix LLM/Judge 호출 3,334회, 2026-09-11 동결 단가의 정가 환산
+  **$1.02956835**다. 전 행의 usage가 기록됐고 $2 상한 이내다. 계정 실제 무료 토큰
+  적용 여부와 별개로 정가를 보고한다. preflight 3회·114 tokens는 별도다.
+- **MathInvert erratum(D46):** threaded executor가 legacy `MathInvertMessage.verify()`를
+  직접 호출해 math-verify의 POSIX signal 등록이 worker thread에서 실패했고 내부 예외가
+  false로 흡수됐다. 영향을 받은 최초 8건 뒤 실행을 멈췄으며, 미호출 오류 1건을
+  마감하고 나머지 30건은 같은 동결 config/run identity의 main-thread 경로로 수행했다.
+  append-only 원본은 수정하지 않았다. `scripts/rescore_g5_math_invert.py`가 성공 원응답
+  38건을 provider 호출 없이 manifest-pinned verifier로 재판정한 결과 valid 38,
+  성공 22·실패 16, 기존 판정 교정 7, 미평가 1, 재판정 오류 0이다.
+  당시 `outputs/g5/crewai-g5-final-v1/g5_math_invert_rescore.json`을 만들었으나 D53에서
+  v1 output과 함께 삭제했으며 G6 입력으로 사용하지 않는다.
+- **PVI(D42):** Solver 고정·단일 topology에는 전파 위반·거리·위치 coverage의 사전
+  정의와 관측 조건이 없으므로 산출하지 않는다.
+- **현재 Gate:** G5의 계획 행 수집은 완료했다. strict `matrix_complete`는 위 4개
+  미완결 때문에 false이며, 지표·분모·erratum 적용은 G6에서 동결한다. 최종 회귀는
+  unit 85개·integration 42개, 총 127개 PASS다. integration의 기존 HumanEval
+  multiprocessing 소켓은 제한 sandbox에서 3개 환경 오류가 났고 호스트 권한 재실행에서
+  전부 통과했다.
+
 ## 2026-09-11 — G4 Sequential 30-run 파일럿 Gate 완료, Hierarchical 보류
 
 - **전용 실행·보고:** `scripts/run_g4_pilot.py`와 `aciarena/evaluation/pilot.py`를 추가해

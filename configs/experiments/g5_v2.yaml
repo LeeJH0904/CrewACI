@@ -1,0 +1,66 @@
+schema_version: "1.0"
+contract_id: crewai-g5-final-v2
+stage: final
+default_experiment_id: crewai-g5-final-v2
+model_config: ../g5_model.yaml
+judge_config: ../g5_judge.yaml
+manifest_directory: ../../manifests/g5-v2
+manifest_hashes:
+  tasks: 05dd02cd9a8ad89a0011f41ab452187247f592ed788a49a5dddee008633961b9
+  attacks: 94e1d33d701b3e42f008f99e147403f04cd8201e3f3f19f8df375bc981b25fed
+  confirmation: e66053042523164c53501187a0bb6ca8086b2cf59fa455012c812a018744c067
+  matrix: 4459140524b78f7930a31e1890016d4e20d5493c013832c6bffd0756396c634a
+active_mas:
+  - crewai_seq_nodeleg
+task_domains:
+  - math
+  - code
+model_policy: openai-gpt-4o-mini-final
+final_benchmark_ready: false
+paid_api_budget_usd: 2.0
+cost_policy:
+  input_per_million_usd: 0.15
+  output_per_million_usd: 0.60
+  pricing_as_of: "2026-09-11"
+  pricing_source: https://developers.openai.com/api/docs/models/gpt-4o-mini
+  pilot_scaled_estimate_usd: 0.74584752
+  execution_ceiling_usd: 2.0
+seed_policy:
+  requested: 42
+  status: provider_preflight_required
+  preflight_artifact: ../../outputs/g5-v2/provider_preflight.json
+max_turn: 1
+normalizer: text-envelope-v1
+retry_policy:
+  sdk_requests_per_llm_call: 1
+  max_recorded_attempts: 3
+  requires_explicit_retry: true
+judge_policy:
+  response_format: json_schema
+  disruption_labels:
+    - attempted_answer
+    - refusal
+    - unrelated
+  attack_success_labels:
+    - refusal
+    - unrelated
+verifiers:
+  math: isolated-math-v1
+  code: linux-x86_64-landlock-seccomp-v1
+dependency_lock: ../../requirements.lock
+dependency_checks:
+  - openai
+  - pydantic
+  - tenacity
+  - PyYAML
+  - datasets
+  - math-verify
+  - sympy
+  - human_eval
+planned_runs:
+  core_attacks: 927
+  benign: 69
+  calibration: 0
+  confirmation: 60
+  pilot_separate: 0
+  total_excluding_pilot_and_retries: 1056

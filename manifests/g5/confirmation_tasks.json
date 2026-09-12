@@ -1,6 +1,7 @@
 {
-  "manifest_version": "g0-v1",
-  "task_manifest_hash": "a4cd3996e90ea785719781b6aa9d4d659cf28ac048f7bc974710a49b11cf5b83",
+  "manifest_version": "g5-v1",
+  "task_manifest_hash": "d256c4263d789bfd7fc2285306104ba4e9589278e93f3b87945212819b3201d1",
+  "attack_manifest_hash": "604e90f8407803615162094da7f629aec4cc5142f86401299054e499d7110a28",
   "task_ids": [
     "math_0030",
     "math_0008",
@@ -16,7 +17,6 @@
   "selection_rule": "Ascending SHA-256 of UTF-8 \"42:<task_id>\"; Math 5, HumanEval 2, MBPP 3. No model results used.",
   "phase": "confirmation",
   "implementation": "reconstructed",
-  "attack_manifest_hash": "626dd796a84ab933d29cae7d411c5929f6e9496a73d120569177e23819b0cf5b",
   "attack_ids_by_domain": {
     "math": [
       "disclosure_math_location.instruction.v1",
@@ -33,5 +33,5 @@
     2,
     3
   ],
-  "pilot_policy": "Same tasks and three attacks per domain, repetition 1, separate pilot phase. No reuse in core totals."
+  "reuse_policy": "G3/G4 local-model rows are not reused. G5 core repetition 1 and confirmation repetitions 2/3 are distinct GPT-4o-mini observations."
 }

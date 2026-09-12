@@ -1,4 +1,64 @@
-# G0 개발 manifest — g0-v1
+# 실험 manifest
+
+## G5 재수집 manifest — g5-v2
+
+`g5-v1`의 MathInvert 의미 결함을 수정한 별도 재수집 계약이다. 기존 v1 파일과 결과는
+보존하고 `g5-v2/`에 새 task/attack/confirmation/matrix manifest를 둔다. 전체 계획은
+여전히 1,056 logical runs이며, AnswerMapping 2행과 MathInvert 4행을 합친 core 6행은
+사전 정의된 `not_applicable`이다. 오류·unknown이 없을 때 core ASR 최대 유효 분모는
+921이다. MathInvert만 의미 변경을 드러내기 위해 `hijacking_math_invert.message.v2`를
+사용하고 나머지 기존 attack ID는 v1을 유지한다.
+
+```bash
+.aciarena/bin/python scripts/g5/build_g5_manifests.py --check
+.aciarena/bin/python scripts/g5/run_g5_matrix.py --stage all
+```
+
+runner 기본값은 `configs/experiments/g5_v2.yaml`, experiment
+`crewai-g5-final-v2`, 출력 `outputs/g5-v2/`이며 외부 호출 없는 dry-run이다. v2 전용
+provider preflight가 없고 readiness가 false이므로 현재 유료 실행은 잠겨 있다.
+
+## G5 1차 Sequential manifest — g5-v1 (보존본)
+
+2026-09-11에 G5 본 실험용으로 별도 동결했다. G0의 범주별 대표 8개 구현을
+확장해 기존 코드가 Math/Code에서 지원하는 **고유 공격 class 22개 전부**를 포함한다.
+동일 class의 중복 등록은 제거하되 서로 다른 기존 변형은 유지한다.
+
+이 절은 설계 이력이다. MathInvert 결함이 있던 v1의
+`configs/experiments/g5.yaml`과 `outputs/g5/`는 D53에 따라 삭제했으며,
+`manifests/g5/`만 역사적 manifest로 보존한다. v1을 현재 실행하거나 논문 결과 입력으로
+사용하지 않는다.
+
+| 파일 | 내용 |
+|---|---|
+| `g5/tasks.json` | G0와 같은 Math 39개·Code 30개와 source hash |
+| `g5/attacks.json` | 13개 category, 고유 class 22개, Math 13개·Code 14개 attack ID |
+| `g5/confirmation_tasks.json` | 기존 고정 Math 5개·Code 5개와 domain별 3개 확인 공격 |
+| `g5/final_matrix.json` | 정상·핵심 공격·확인 반복의 정확한 1,056-run 계획과 입력 manifest hash |
+
+Sequential 단독 실행 규모는 핵심 공격 `39×13 + 30×14 = 927`, 정상 69,
+확인 subset 추가 반복 60으로 총 **1,056 logical runs**다. AnswerMapping 두 변형과
+숫자가 없는 `math_0016`의 두 조합은 사전 정의된 `not_applicable`이며 계획에서
+삭제하지 않는다. 실제 API 호출 수는 run 수와 다르고 전체 attempt 사용량을 별도로
+합산한다.
+
+```bash
+.aciarena/bin/python scripts/build_g5_manifests.py --check
+.aciarena/bin/python scripts/run_g5_matrix.py
+.aciarena/bin/python scripts/run_g5_matrix.py --stage smoke
+```
+
+두 번째 명령의 기본 동작은 외부 호출이 없는 dry-run이다. `--execute`는 provider
+preflight 통과, final config readiness, 고정 비용 상한을 모두 확인한 뒤에만 허용한다.
+G5 파일은 G0 개발 기준을 덮어쓰지 않는다.
+
+유료 실행은 `smoke` 8, `benign` 69, `math-core` 507, `code-core` 420,
+`confirmation` 60 단계로 나눌 수 있다. 단계 내부는 기본 20-run 소배치이며
+`--max-batches`와 기본 $1.00 session 정지선으로 여러 invocation에 나눠 resume한다.
+smoke 8개는 전체 계획에 포함된 row이므로 이후 단계에서 중복 집계하지 않는다.
+`--stage all --execute`는 실수 방지를 위해 `--allow-full-matrix`를 추가로 요구한다.
+
+## G0 개발 manifest — g0-v1
 
 2026-09-08에 기존 구현의 지원 범위를 기준으로 생성했다. **G5 본 실험 최종 동결이 아니다.**
 결정 근거는 [DECISIONS.md](../DECISIONS.md)의 D6·D7·D8·D12·DOMAIN-1을 따른다.
@@ -135,10 +195,12 @@ attack = build_attack(
 `attack.spec`과 `attack.attack_id`로 원래 명세를 참조한다.
 
 `attack_id='none'`은 Judge가 없는 새 BenignAttack을 반환하고 공격 판정은 None이다.
-RunRecord에는 `attack_status=not_applicable`로 기록한다. 공격 조건의 task-level
-`not_applicable`은 AnswerMapping의 숫자 없는 ground truth에만 허용한다.
-현재 공개 catalog는 g0-v1의 8개 범주와 Solver만 지원한다. 새 category/domain/version
-추가는 manifest 및 catalog 계약을 함께 검토해야 한다.
+RunRecord에는 `attack_status=not_applicable`로 기록한다. G0의 공격 조건에서 task-level
+`not_applicable`은 AnswerMapping의 숫자 없는 ground truth에만 허용하며, G5-v2는
+manifest에 고정한 MathInvert의 의미상 비적용 task도 허용한다.
+catalog는 G0의 대표 8개 구현과 G5의 고유 22개 구현을 각각 해당 manifest version으로
+검증하며 target은 모두 Solver다. 새 category/domain/version 추가는 manifest 및
+catalog 계약을 함께 검토해야 한다.
 
 CrewAI의 `build_suite()`/`build_executor()`는 Recorded 경로에서 이 API를 호출한다.
 다른 MAS의 기존 `build_attacks()`/ContinuousAttackExecutor 경로는 유지한다.

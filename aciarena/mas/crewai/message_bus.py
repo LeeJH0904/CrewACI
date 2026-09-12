@@ -31,6 +31,7 @@ class RunTrace:
         self.call_count = 0
         self.prompt_tokens = 0
         self.completion_tokens = 0
+        self.usage_missing_calls = 0
 
     def emit(self, sender, receiver, phase, content, original=None, attacked=False):
         if self.stop.is_set():
@@ -86,9 +87,14 @@ class RunTrace:
         self.attach_llm(name, agent.llm)
 
     def _usage(self, prompt, completion):
+        complete = True
         for field, value in [('prompt_tokens', prompt), ('completion_tokens', completion)]:
-            current = getattr(self, field)
-            setattr(self, field, current + value if current is not None and type(value) is int and value >= 0 else None)
+            if type(value) is int and value >= 0:
+                setattr(self, field, getattr(self, field) + value)
+            else:
+                complete = False
+        if not complete:
+            self.usage_missing_calls += 1
 
     def attach_llm(self, name, llm, judge=False):
         from aciarena.agent_components.llms.openai_llm import OpenAILLM

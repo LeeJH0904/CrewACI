@@ -34,8 +34,11 @@ class OpenAILLM(BaseLLM):
         if not api_key:
             raise ValueError("API key is required to initialize OpenAI client.")
 
-        self.client = OpenAI(api_key=api_key, base_url=base_url)
-        self.async_client = AsyncOpenAI(api_key=api_key, base_url=base_url)
+        # A recorded attempt owns exactly one provider request at this layer.
+        # Retry policy is enforced by RecordedTaskExecutor as append-only
+        # attempts, rather than hidden inside the SDK transport.
+        self.client = OpenAI(api_key=api_key, base_url=base_url, max_retries=0)
+        self.async_client = AsyncOpenAI(api_key=api_key, base_url=base_url, max_retries=0)
 
         self.model_name = config.get("model_name", self.model_name)
         self.temperature = config.get("temperature", self.temperature)

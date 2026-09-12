@@ -25,15 +25,26 @@ SURFACE_CLASSES = {'instruction': InstructionInjectionAttack, 'agent': Malicious
 # Semantic category/domain boundaries come from existing payload/verifier meaning.
 # The manifest chooses a representative within these boundaries, not import order.
 CATEGORIES = {
+    'disclosure_generic_apikey': ('disclosure_attack', ('math', 'code'), ('ApikeyMessage',)),
     'disclosure_math_location': ('disclosure_attack', ('math',), ('MathLocationLeakAgent', 'MathLocationLeakInstruction')),
     'disclosure_math_name': ('disclosure_attack', ('math',), ('MathNameLeakAgent', 'MathNameLeakInstruction')),
     'disclosure_code_apikey': ('disclosure_attack', ('code',), ('CodeApikeyLeakAgent', 'CodeApikeyLeakInstruction', 'ApikeyMessage')),
     'disclosure_code_name': ('disclosure_attack', ('code',), ('CodeNameLeakAgent', 'CodeNameLeakInstruction')),
     'disruption_ddos': ('disruption_attack', ('math', 'code'), ('DDOSAgent', 'DDOSInstruction', 'DDOSMessage')),
+    'disruption_misalign': ('disruption_attack', ('math', 'code'), ('MisalignAgent',)),
+    'disruption_code_data_collection': ('disruption_attack', ('code',), ('CodeDisruptionAttack',)),
+    'disruption_math_data_collection': ('disruption_attack', ('math',), ('MathDisruptionAttack',)),
     'hijacking_safety_check': ('hijacking_attack', ('code',), ('SafetyCheckAgent', 'SafetyCheckInstruction')),
     'hijacking_malicious_report': ('hijacking_attack', ('code',), ('MaliciousReportAgent', 'MaliciousReportInstruction')),
     'hijacking_answer_mapping': ('hijacking_attack', ('math',), ('AnswerMappingAgent', 'AnswerMappingInsruction')),
+    'hijacking_math_invert': ('hijacking_attack', ('math',), ('MathInvertMessage',)),
 }
+G0_CATEGORIES = frozenset({
+    'disclosure_math_location', 'disclosure_math_name', 'disclosure_code_apikey',
+    'disclosure_code_name', 'disruption_ddos', 'hijacking_safety_check',
+    'hijacking_malicious_report', 'hijacking_answer_mapping',
+})
+G5_CATEGORIES = frozenset(CATEGORIES)
 DEPENDENCIES = frozenset({
     'aciarena/attacks/base_attack.py', 'aciarena/evaluation/task/math_task.py',
     'aciarena/evaluation/task/code_task.py', 'aciarena/evaluation/human_eval_execution.py',
@@ -61,6 +72,7 @@ class AttackSpec(BaseModel):
     verifier: TEXT
     verifier_source_hash: HASH
     applicability: TEXT
+    not_applicable_task_ids: tuple[TEXT, ...] = ()
     selection_reason: TEXT
 
 
@@ -104,28 +116,36 @@ class AttackCatalog:
                                   object_pairs_hook=unique_json_object)
         except (OSError, ValueError) as exc:
             raise CatalogError('Cannot read a valid attack manifest') from exc
-        if not isinstance(manifest, dict) or manifest.get('manifest_version') != 'g0-v1':
+        manifest_version = manifest.get('manifest_version') if isinstance(manifest, dict) else None
+        if manifest_version not in {'g0-v1', 'g5-v1', 'g5-v2'}:
             raise CatalogError('Unsupported attack manifest version')
+        self.manifest_version = manifest_version
         entries = manifest.get('attacks')
         dependencies = manifest.get('dependencies')
         if not isinstance(entries, list) or not isinstance(dependencies, dict) or set(dependencies) != DEPENDENCIES:
             raise CatalogError('Manifest must contain attacks and the complete dependency fingerprints')
         self._dependencies = MappingProxyType(dict(dependencies))
         self._check_dependencies()
-        specs, classes, categories = {}, {}, set()
+        specs, classes, categories, class_paths = {}, {}, set(), set()
         for entry in entries:
             try:
                 # JSON-mode strict validation accepts arrays as immutable tuples.
                 spec = AttackSpec.model_validate_json(json.dumps(entry))
             except ValueError as exc:
                 raise CatalogError('Invalid attack specification') from exc
-            if spec.attack_id in specs or spec.attack_category in categories:
-                raise CatalogError('Duplicate attack ID or category')
-            classes[spec.attack_id] = self._validate_source(spec)
+            if spec.attack_id in specs or spec.class_path in class_paths:
+                raise CatalogError('Duplicate attack ID or class')
+            classes[spec.attack_id] = self._validate_source(spec, manifest_version)
             specs[spec.attack_id] = spec
             categories.add(spec.attack_category)
-        if categories != set(CATEGORIES):
-            raise CatalogError('Expected one representative for each of the eight categories')
+            class_paths.add(spec.class_path)
+        expected_categories = G0_CATEGORIES if manifest_version == 'g0-v1' else G5_CATEGORIES
+        if categories != expected_categories:
+            raise CatalogError('Attack categories do not match the manifest version policy')
+        if manifest_version == 'g0-v1' and len(specs) != 8:
+            raise CatalogError('G0 requires eight representative attacks')
+        if manifest_version in {'g5-v1', 'g5-v2'} and len(specs) != 22:
+            raise CatalogError('G5 requires all 22 unique Math/Code attacks')
         self._specs = MappingProxyType(specs)
         self._classes = MappingProxyType(classes)
 
@@ -139,7 +159,7 @@ class AttackCatalog:
             if actual != expected:
                 raise CatalogError(f'Dependency hash mismatch: {source}')
 
-    def _validate_source(self, spec):
+    def _validate_source(self, spec, manifest_version):
         policy = CATEGORIES.get(spec.attack_category)
         if policy is None:
             raise CatalogError('Unknown attack category')
@@ -151,7 +171,9 @@ class AttackCatalog:
             raise CatalogError('Domain coverage disagrees with the category contract')
         if spec.goal != spec.attack_category.split('_', 1)[0]:
             raise CatalogError('Category and goal disagree')
-        if spec.attack_id != f'{spec.attack_category}.{spec.surface}.v1':
+        variant = ('v2' if manifest_version == 'g5-v2'
+                   and spec.attack_category == 'hijacking_math_invert' else 'v1')
+        if spec.attack_id != f'{spec.attack_category}.{spec.surface}.{variant}':
             raise CatalogError('Attack ID must identify the category, surface and variant version')
         if spec.source != f'aciarena/attacks/{module_name}.py':
             raise CatalogError('Class and source path disagree')
@@ -222,7 +244,7 @@ class AttackCatalog:
         if spec is None:
             return BenignAttack(args)
         # Recheck even a reused catalog, before any provider initialization.
-        cls = self._validate_source(spec)
+        cls = self._validate_source(spec, self.manifest_version)
         if cls is not self._classes[attack_id]:
             raise CatalogError('Attack class changed after catalog loading')
         attack = cls(args=copy.deepcopy(args), llm_config=copy.deepcopy(llm_config))

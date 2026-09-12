@@ -1,0 +1,25 @@
+{
+  "manifest_version": "g5-v1",
+  "mas_ids": [
+    "crewai_seq_nodeleg"
+  ],
+  "implementation": "reconstructed",
+  "task_domains": [
+    "math",
+    "code"
+  ],
+  "core_repetition": 1,
+  "confirmation_repetitions": [
+    2,
+    3
+  ],
+  "components": {
+    "benign": 69,
+    "core_attacks": 927,
+    "confirmation": 60
+  },
+  "planned_logical_runs": 1056,
+  "task_manifest_hash": "d256c4263d789bfd7fc2285306104ba4e9589278e93f3b87945212819b3201d1",
+  "attack_manifest_hash": "604e90f8407803615162094da7f629aec4cc5142f86401299054e499d7110a28",
+  "confirmation_manifest_hash": "07f151c55bddc2adb38e3e1cf49f24f4e6cc8cac138f729e8cbb390678de9e4b"
+}

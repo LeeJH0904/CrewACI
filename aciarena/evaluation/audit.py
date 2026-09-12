@@ -18,6 +18,7 @@ class MatrixKey:
     attack_id: str
     repetition: int
     phase: str
+    config_hash: str
 
 
 @dataclass(frozen=True)
@@ -38,12 +39,13 @@ def record_key(record: RunRecord):
         attack_id=record.attack_id,
         repetition=record.repetition,
         phase=record.phase,
+        config_hash=record.config_hash,
     )
 
 
 def build_matrix_plan(*, experiment_id, selections, tasks, catalog,
                       mas_id='crewai_seq_nodeleg', implementation='reconstructed',
-                      repetition=1, phase='pilot'):
+                      repetition=1, phase='pilot', config_hash):
     expected = set()
     for task_id, attack_id in selections:
         try:
@@ -52,14 +54,14 @@ def build_matrix_plan(*, experiment_id, selections, tasks, catalog,
             raise ValueError(f'Unknown planned task: {task_id}') from exc
         catalog.get(attack_id, task_domain=entry['task_domain'])
         key = MatrixKey(experiment_id, task_id, mas_id, implementation,
-                        attack_id, repetition, phase)
+                        attack_id, repetition, phase, config_hash)
         if key in expected:
             raise ValueError(f'Duplicate planned run: {task_id}/{attack_id}')
         expected.add(key)
     return MatrixPlan(frozenset(expected))
 
 
-def build_manifest_plan(name, *, experiment_id, tasks, catalog,
+def build_manifest_plan(name, *, experiment_id, tasks, catalog, config_hash,
                         manifest_directory=None):
     """Build one predeclared development matrix from checked-in manifests."""
     directory = Path(manifest_directory) if manifest_directory is not None else (
@@ -102,13 +104,14 @@ def build_manifest_plan(name, *, experiment_id, tasks, catalog,
             catalog=catalog,
             repetition=repetition,
             phase=phase,
+            config_hash=config_hash,
         )
         expected.update(plan.expected)
     return MatrixPlan(frozenset(expected))
 
 
 def _format_keys(keys):
-    return [f'{key.task_id}/{key.attack_id}/r{key.repetition}/{key.phase}'
+    return [f'{key.task_id}/{key.attack_id}/r{key.repetition}/{key.phase}/cfg-{key.config_hash[:12]}'
             for key in sorted(keys)]
 
 
@@ -123,7 +126,9 @@ def _config_snapshot_errors(config_hash, config_directory, catalog):
 
     errors = []
     root = Path(__file__).resolve().parents[2]
-    current_tasks = json.loads((root / 'manifests/tasks.json').read_text())
+    # A versioned experiment keeps its task and attack manifests together.
+    # Do not compare a G5 snapshot against the default G0 development manifest.
+    current_tasks = json.loads((catalog.manifest_path.parent / 'tasks.json').read_text())
     if config.get('task_manifest_hash') != canonical_hash(current_tasks):
         errors.append(f'config_task_manifest_drift:{config_hash}')
     if config.get('attack_manifest_hash') != catalog.manifest_hash:
@@ -291,8 +296,14 @@ def audit_matrix_records(plan, records, messages, tasks, catalog, *,
             if not record.verifier_version.endswith('/' + spec.verifier_source_hash):
                 errors.append(f'attack_verifier_version_mismatch:{record.task_id}/{record.attack_id}')
             if spec.attack_category == 'hijacking_answer_mapping' and record.status == 'success':
-                applicable = any(character.isascii() and character.isdigit()
-                                 for character in str(record.ground_truth))
+                applicable = (record.task_id not in spec.not_applicable_task_ids
+                              if spec.not_applicable_task_ids else
+                              any(character.isascii() and character.isdigit()
+                                  for character in str(record.ground_truth)))
+                if applicable != (record.attack_status != 'not_applicable'):
+                    errors.append(f'attack_applicability_mismatch:{record.task_id}/{record.attack_id}')
+            if spec.attack_category == 'hijacking_math_invert' and record.status == 'success':
+                applicable = record.task_id not in spec.not_applicable_task_ids
                 if applicable != (record.attack_status != 'not_applicable'):
                     errors.append(f'attack_applicability_mismatch:{record.task_id}/{record.attack_id}')
             if require_injection:
