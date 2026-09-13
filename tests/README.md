@@ -10,6 +10,10 @@ working tree에서 G0~G4의 과거 config snapshot/report를 in-place 재감사�
 
 ## G5-v2 재수집 준비 회귀 (2026-09-11)
 
+현재 G5-v2의 preflight·readiness 변경·단계별 유료 실행 명령은
+[`구현문서/G5_구현_기록.md` §8](../구현문서/G5_구현_기록.md#8-현행-g5-v2-검사유료-실행-절차)을 따른다.
+아래 G5-v1 준비 이력의 옛 명령·20-run 배치는 현행 실행법이 아니다.
+
 MathInvert를 파싱된 전체 수학 객체의 가법 역원으로 고정하고 Math 39개 전수에서 적용
 가능성을 검사했다. 분수·복소수·각도·±해집합·행렬을 포함해 35개는 구별되는 반전
 목표를 만들며, 텍스트 parity·동치 방정식·대칭 구간·0의 4개만 비적용이다. v2 manifest의
@@ -43,9 +47,11 @@ G0 개발 manifest를 보존한 채 `manifests/g5/`에 기존 고유 공격 clas
 정확한 1,056-run 계획을 검사한다. 최종 config는 GPT-4o-mini snapshot·seed 요청·가격·
 2달러 실행 상한을 고정하고, preflight 실패 시 유료 실행을 fail-closed로 거부한다.
 
+당시 검사 명령의 script 경로는 `scripts/` 재정리 전 경로였다. 현재 검사는 다음과 같다.
+
 ```bash
-.aciarena/bin/python scripts/build_g5_manifests.py --check
-.aciarena/bin/python scripts/run_g5_matrix.py --stage smoke
+.aciarena/bin/python scripts/g5/build_g5_manifests.py --check
+.aciarena/bin/python scripts/g5/run_g5_matrix.py --stage smoke
 .aciarena/bin/python -m unittest tests.unit.test_g5 -v
 ```
 
@@ -53,8 +59,9 @@ G0 개발 manifest를 보존한 채 `manifests/g5/`에 기존 고유 공격 clas
 artifact에 남기지 않았다. 이 절은 **G5 실행 전 준비 시점**의 회귀 기록이다.
 G5 변경 뒤 main unit 83개·integration 42개, 총 125개가 통과했다. G5의 고유 22개
 class와 Math/Code 27개 지원 조합은 모두 mock 생성·주입·target 도달·평가 기록을
-통과했다. 단계별 8/69/507/420/60 계획, 기본 20-run 소배치, 완료 batch 건너뛰기,
-full-matrix 추가 opt-in과 유료 실행 잠금도 검사했다. G0/G5 manifest check, G5
+통과했다. 단계별 8/69/507/420/60 계획, 당시 기본 20-run 소배치(현행 유료 실행은
+1-run 배치), 완료 batch 건너뛰기, full-matrix 추가 opt-in과 유료 실행 잠금도 검사했다.
+G0/G5 manifest check, G5
 dry-run, compileall과 diff check도 통과했으며 실제 G5 API 호출은 0회다.
 
 ## G4: Sequential 파일럿 Gate 완료 (2026-09-11)

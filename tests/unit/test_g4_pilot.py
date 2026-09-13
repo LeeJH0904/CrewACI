@@ -1,3 +1,5 @@
+import contextlib
+import io
 import json
 from pathlib import Path
 import tempfile
@@ -61,6 +63,23 @@ class G4PilotTests(unittest.TestCase):
             path.write_text(json.dumps(manifest))
             with self.assertRaisesRegex(ValueError, 'ten unique'):
                 pilot_manifest(path)
+
+    def test_dry_run_driver_builds_plan_without_paid_calls(self):
+        # Regression: the driver's build_manifest_plan call must pass the now
+        # required config_hash. --dry-run reads no prior runs and makes no
+        # provider calls, so it exercises the call path in isolation.
+        from scripts.g4.run_g4_pilot import main as run_g4_main
+        with tempfile.TemporaryDirectory() as directory:
+            stdout = io.StringIO()
+            with contextlib.redirect_stdout(stdout):
+                code = run_g4_main([
+                    '--dry-run', '--experiment-id', 'g4-dry-run-test',
+                    '--output-dir', directory])
+        self.assertEqual(code, 0)
+        payload = json.loads(stdout.getvalue())
+        self.assertEqual(payload['planned_runs'], 30)
+        self.assertEqual(payload['paid_api_budget_usd'], 0)
+        self.assertEqual(len(payload['groups']), 6)
 
 
 if __name__ == '__main__':

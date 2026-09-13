@@ -1,3 +1,16 @@
+## 2026-09-13 — G5-v2 유료 재실행 절차 문서화
+
+- `구현문서/G5_구현_기록.md`의 현행 상태·manifest·비적용 분모·script 경로·1-run
+  유료 배치·usage fail-closed·출력 경로를 v2 코드/계약과 동기화했다. v1 수치·재판정은
+  삭제된 역사적 이력임을 구분하고, G6/논문 입력은 새 v2 수집분으로 명시했다.
+- 저장소 루트에서 실행할 무과금 검사·dry-run → 유료 provider preflight 3회 → PASS 확인
+  후 readiness 두 값 변경 → dry-run 재확인 → smoke/benign/math-core/code-core/confirmation
+  유료 실행 순서를 §8에 기록했다. `--max-batches`, 비용 정지선, 자동 resume,
+  `--retry-errors` 조건과 `--stage all` opt-in도 현행 코드 기준으로 정리했다.
+- `tests/README.md`의 오래된 G5 script 경로와 20-run 이력에 현행 안내를 덧붙이고,
+  `00_구현_가이드.md`에서 §8로 연결했다. **문서 변경만 수행했고 preflight·벤치/API
+  호출은 하지 않았다.**
+
 ## 2026-09-12 — Claude 검증 권고 반영: 과거 Gate 재현 경계 및 G5-v1 삭제
 
 - **G0~G4 재현 경계(P1/D52):** 공유 `hijacking_attack.py`와 실행·감사 소스, script
@@ -63,7 +76,13 @@
   config_hash에는 엔진 소스만 포함하기로 결정했다. 사용자 지시로, **통합 시 유료 안전
   방지턱(preflight 강제·$2 상한·세션 정지선·full-matrix opt-in·batch 비용정지)은 제거**하며
   예산 통제는 운영 절차로 담보한다(리스크 명시). 단 `--execute` 없이는 유료 호출을 하지
-  않는 dry-run 기본값은 유지한다(옵션 1 확정). G5 동결·재수집 중에는 착수하지 않는다.
+  않는 dry-run 기본값은 유지한다(옵션 1 확정). 통합 오케스트레이터는 **돈을 다루는 비용
+  피드백 정지 루프(①)만 제거**하고 **config_hash 재개·중복방지(②)·결정적 매트릭스 열거(③)·
+  종단 audit 인증(④)은 정합성 문제이므로 유지**하여 `--stage`/`--matrix` 모드로 흡수한다
+  (2026-09-13 추가). 아울러 통합 시 **`--suite <goal>`을 동결 manifest 기반 결정적 계열
+  확장으로 CLI에 노출**하여(계열 전체 열거는 이미 `g5_groups`가 수행 중) 레거시의 계열-단위
+  편의성과 현재의 결정성을 함께 확보하고 `--attack_ids`(세밀 부분집합)와 공존시킨다
+  (2026-09-13 추가). G5 동결·재수집 중에는 착수하지 않는다.
   `00`§4·`DECISIONS.md` D48에 기록했다.
 
 ## 2026-09-11 — G5 검증 재감사: verifier 무결성 전수 감사 및 MathInvert 라우팅 수정

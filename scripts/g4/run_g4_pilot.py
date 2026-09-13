@@ -64,8 +64,12 @@ def main(argv=None):
     catalog = AttackCatalog()
     manifest = pilot_manifest()
     groups = pilot_groups(tasks, catalog, manifest)
+    # The planned-cell count is independent of config_hash; the audited plan
+    # (with the real config_hash derived from recorded runs) is built inside
+    # build_g4_report below.
     plan = build_manifest_plan(
-        'pilot', experiment_id=args.experiment_id, tasks=tasks, catalog=catalog)
+        'pilot', experiment_id=args.experiment_id, tasks=tasks, catalog=catalog,
+        config_hash='0' * 64)
     directory = Path(args.output_dir) / args.experiment_id
 
     if args.dry_run:
