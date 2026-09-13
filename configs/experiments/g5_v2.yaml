@@ -17,8 +17,8 @@ task_domains:
   - code
 model_policy: openai-gpt-4o-mini-final
 
-final_benchmark_ready: false
-#final_benchmark_ready: true
+#final_benchmark_ready: false
+final_benchmark_ready: true
 
 paid_api_budget_usd: 2.0
 cost_policy:
@@ -31,8 +31,8 @@ cost_policy:
 
 seed_policy:
   requested: 42
-  status: provider_preflight_required
-  #status: accepted_best_effort
+  #status: provider_preflight_required
+  status: accepted_best_effort
   preflight_artifact: ../../outputs/g5-v2/provider_preflight.json
 
 max_turn: 1
