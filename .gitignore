@@ -21,3 +21,6 @@ __pycache__/
 /outputs/g4/**/.writer.lock
 /outputs/g5/**/.run_locks/
 /outputs/g5/**/.writer.lock
+/outputs/g5-v2/**/.run_locks/
+/outputs/g5-v2/**/.writer.lock
+/outputs/g5-v2/provider_preflight.json

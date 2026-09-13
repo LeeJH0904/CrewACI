@@ -16,7 +16,10 @@ task_domains:
   - math
   - code
 model_policy: openai-gpt-4o-mini-final
+
 final_benchmark_ready: false
+#final_benchmark_ready: true
+
 paid_api_budget_usd: 2.0
 cost_policy:
   input_per_million_usd: 0.15
@@ -25,10 +28,13 @@ cost_policy:
   pricing_source: https://developers.openai.com/api/docs/models/gpt-4o-mini
   pilot_scaled_estimate_usd: 0.74584752
   execution_ceiling_usd: 2.0
+
 seed_policy:
   requested: 42
   status: provider_preflight_required
+  #status: accepted_best_effort
   preflight_artifact: ../../outputs/g5-v2/provider_preflight.json
+
 max_turn: 1
 normalizer: text-envelope-v1
 retry_policy:
