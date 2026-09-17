@@ -134,8 +134,8 @@ class G5ManifestTests(unittest.TestCase):
 
     def test_final_contract_is_ready_after_provider_preflight(self):
         contract, model, judge = load_experiment_configuration('configs/experiments/g5_v2.yaml')
-        self.assertFalse(contract['final_benchmark_ready'])
-        self.assertEqual(contract['seed_policy']['status'], 'provider_preflight_required')
+        self.assertTrue(contract['final_benchmark_ready'])
+        self.assertEqual(contract['seed_policy']['status'], 'accepted_best_effort')
         self.assertEqual(contract['paid_api_budget_usd'], 2.0)
         self.assertEqual(contract['retry_policy']['sdk_requests_per_llm_call'], 1)
         self.assertEqual(model['model_name'], 'gpt-4o-mini-2024-07-18')

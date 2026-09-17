@@ -1,0 +1,67 @@
+{
+  "analysis_sources": {
+    "aciarena/evaluation/aggregation.py": "c2c10acef564e18de0d48ab44288eed041f1ff15a8bdf495f79c46cbcf0fef2a",
+    "scripts/aggregate_results.py": "d6f4e309d67a819fdc8ba4824e6a633b79e2e8fd674f2b21f0bd48dee10a9ba5",
+    "scripts/run_experiment.py": "3762b0b4f728e98248b70e3d9600b57d791b13289c630569e252372193a321e3"
+  },
+  "artifact_version": "g6-artifact-manifest-v1",
+  "config_hash": "939096c2c7394f53fc87e71779dc9b64187f247a559db644296ecde91209165a",
+  "experiment_id": "crewai-g5-final-v2",
+  "generated_artifacts": {
+    "g6_metrics.csv": {
+      "path": "outputs/g6/crewai-g5-final-v2/g6_metrics.csv",
+      "sha256": "70638927763662769fbf12cafc6a958da5a7d2e49c5398fd066f9832b6c6507d"
+    },
+    "g6_report.json": {
+      "path": "outputs/g6/crewai-g5-final-v2/g6_report.json",
+      "sha256": "c491ec416336f44eb705c11389f9490db0c6a9444b03a15e385017c403b9e17f"
+    },
+    "g6_report.md": {
+      "path": "outputs/g6/crewai-g5-final-v2/g6_report.md",
+      "sha256": "42dec5112f1cd90a18286efa88b63de6af55ce99e7bdb1a52230ee5bb2fcfa2f"
+    }
+  },
+  "report_hash": "1db3b6880a8bce4ed6add025238b5679ab92d5a9cf3fe75c455e729743167814",
+  "source_inputs": {
+    "config_snapshot": {
+      "path": "outputs/g5-v2/crewai-g5-final-v2/configs/939096c2c7394f53fc87e71779dc9b64187f247a559db644296ecde91209165a.json",
+      "sha256": "ee556f5e30f69273bf6aab541def209577e1b67eb653b134c4c930633ca0a507"
+    },
+    "dependency_lock": {
+      "path": "requirements.lock",
+      "sha256": "dd8f4132ea7065a81019a3dfebdd7e69feb6f3210f6f0cb6a72787d20ae8672e"
+    },
+    "experiment_config": {
+      "path": "configs/experiments/g5_v2.yaml",
+      "sha256": "c9429c2a5cf167ae0fd76eb99a6e8630441dcd57c2f42089da9b79ad377e502f"
+    },
+    "g5_progress": {
+      "path": "outputs/g5-v2/crewai-g5-final-v2/g5_progress.json",
+      "sha256": "a92cd6f1dd649adb0d0c3ccf5550852d9098e23d0a7c9f98e4e2868783518755"
+    },
+    "manifest_attacks.json": {
+      "path": "manifests/g5-v2/attacks.json",
+      "sha256": "e0ff9f97be64995993db0d2b38117f58cbf18127243405288eabbe5008e0eca2"
+    },
+    "manifest_confirmation_tasks.json": {
+      "path": "manifests/g5-v2/confirmation_tasks.json",
+      "sha256": "14d1bb0df7676251194010a7278e9b36af5b5b012601fd9eeb09b8c83d1ffc67"
+    },
+    "manifest_final_matrix.json": {
+      "path": "manifests/g5-v2/final_matrix.json",
+      "sha256": "34c156df12376f93cdd355026ef2f6f2c4a1d3f8e140adf43c6a81b4d46e686b"
+    },
+    "manifest_tasks.json": {
+      "path": "manifests/g5-v2/tasks.json",
+      "sha256": "9eb1329a4cf00b18cc5fe5c8e12e3d38a6a41620ce577987ee4398cae826e979"
+    },
+    "messages": {
+      "path": "outputs/g5-v2/crewai-g5-final-v2/messages.jsonl",
+      "sha256": "d1e3bc5d5e331610682aa25856961e9ea96bc610fa516ff6fbb480992a67d260"
+    },
+    "runs": {
+      "path": "outputs/g5-v2/crewai-g5-final-v2/runs.jsonl",
+      "sha256": "4259a4009ae21668856635265e7af3110c560cf52eb98f8371b39e121029ac49"
+    }
+  }
+}

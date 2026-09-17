@@ -25,6 +25,7 @@ aciarena/defenses/__init__.py
 aciarena/defenses/aci_sentinel.py
 aciarena/defenses/bert_detector.py
 aciarena/evaluation/__init__.py
+aciarena/evaluation/aggregation.py
 aciarena/evaluation/audit.py
 aciarena/evaluation/code_verifier_worker.py
 aciarena/evaluation/configuration.py

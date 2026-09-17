@@ -528,7 +528,7 @@ attack 판정 valid였고 공격 성공은 0건이었다. 따라서 recorded 계
 | G3 | 공식 CrewAI와 재구현의 20-run 기능 대조 |
 | G4 | 실제 모델 파일럿에서 완료율·주입률·parse·비용을 확인하고 낮은 UA/ASR을 구분 |
 | G5 | manifest 동결 시 ① CrewAI를 math/code 전 공격 세트로 확장(모든 MAS 동일 집합); CrewAI 본 matrix 실행 |
-| G6 | 원본 row에서 지표 재계산하는 공통 집계기 골격을 legacy 수용 가능하게 구성 (**CrewAI 독립 벤치 완료**) |
+| G6 | **완료:** 원본 row에서 지표를 재계산하는 `g6-common-aggregation-v1`을 공통 field mapping 기반으로 구현하고 JSON/Markdown/CSV/hash artifact 동결 (**CrewAI 독립 벤치 완료**) |
 | G7 | ② legacy per-row 기록 + bug-fixed legacy 재실행 + ③ 공통 집계기 완성으로 CrewAI↔legacy 정렬·비교. 파일럿·예산 게이트 통과 후 착수 |
 
 정렬(G7)이 끝나기 전까지는 CrewAI recorded 결과를 독립 실험으로 제시하고 legacy

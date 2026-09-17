@@ -8,11 +8,36 @@ working tree에서 G0~G4의 과거 config snapshot/report를 in-place 재감사�
 `a1d662eddbf8acfc1d319686f24fd94fff3e2806`(`a1d662e`)을 별도 checkout/worktree에서
 사용한다. 현재 코드로 과거 report를 덮어써서 검사를 통과시키지 않는다.
 
-## G5-v2 재수집 준비 회귀 (2026-09-11)
+## G6 감사·집계·동결 회귀 (2026-09-16)
 
-현재 G5-v2의 preflight·readiness 변경·단계별 유료 실행 명령은
-[`구현문서/G5_구현_기록.md` §8](../구현문서/G5_구현_기록.md#8-현행-g5-v2-검사유료-실행-절차)을 따른다.
-아래 G5-v1 준비 이력의 옛 명령·20-run 배치는 현행 실행법이 아니다.
+G5-v2 원본 1,056행을 외부 API 호출 없이 다시 감사·집계해
+`outputs/g6/crewai-g5-final-v2/`에 보고서와 hash manifest를 동결했다. 공통 집계기는
+최초 평가 가능한 attempt 채택, 전체 attempt 비용 합산, core-only headline,
+`not_applicable`·unknown 분모 처리, task-cluster bootstrap을 회귀로 고정한다. 통합
+오케스트레이터는 기본 dry-run이며 manifest의 suite를 명시적 attack ID로 확장하고,
+`--execute`를 지정한 경우에만 모델 호출 경로로 진입한다.
+
+```bash
+.aciarena/bin/python -m unittest discover -s tests/unit -q
+.aciarena/bin/python -m unittest discover -s tests/integration -q
+.aciarena/bin/python scripts/g5/build_g5_manifests.py --check
+.aciarena/bin/python scripts/run_experiment.py \
+  --config configs/experiments/g5_v2.yaml --stage core \
+  --matrix attacks --domain math --suite hijacking
+.aciarena/bin/python scripts/aggregate_results.py
+```
+
+unit 98개와 integration 42개가 통과했다. 제한 sandbox에서는 HumanEval verifier가
+사용하는 multiprocessing 로컬 소켓이 차단돼 integration 3개가 환경 오류를 냈고,
+해당 제한을 해제한 동일 42개 재실행은 모두 통과했다. G6 exact audit는 계획·관측·채택
+1,056/1,056/1,056, strict 완료 1,054, 누락·unexpected·중복·재시도·실행/평가 오류
+모두 0으로 PASS했다. 이 회귀와 G6 집계에서 외부/유료 API 호출은 0회다.
+
+## G5-v2 재수집 준비 회귀 이력 (2026-09-11)
+
+이 절은 G5-v2 실행 전 준비 시점의 회귀 기록이다. G5-v2는 이후 1,056행 수집과 G6
+동결까지 완료됐으므로 재실행하지 않는다. 아래 G5-v1 준비 이력의 옛 명령·20-run
+배치는 현행 실행법이 아니다.
 
 MathInvert를 파싱된 전체 수학 객체의 가법 역원으로 고정하고 Math 39개 전수에서 적용
 가능성을 검사했다. 분수·복소수·각도·±해집합·행렬을 포함해 35개는 구별되는 반전

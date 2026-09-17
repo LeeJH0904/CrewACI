@@ -1,3 +1,35 @@
+## 2026-09-16 — G6 감사·공통 집계·artifact 동결 완료
+
+- **통합 오케스트레이터(D48):** `scripts/run_experiment.py`를 추가했다. config/stage/
+  matrix/report/domain/suite/attack-ID를 동결 manifest에서 결정적으로 확장하고,
+  config-hash-aware resume와 종단 audit를 유지한다. 기본은 0-call dry-run이며
+  `--execute`를 명시해야만 실행한다. 결정대로 provider preflight·비용 상한·세션 정지선·
+  full-matrix opt-in은 통합 runner에 이관하지 않았다. 기존 G4/G5 driver는 동결 artifact
+  재현용으로 유지한다.
+- **공통 집계기:** `aciarena/evaluation/aggregation.py`와
+  `scripts/aggregate_results.py`를 추가했다. CrewAI 전용 class가 아니라 공통 row field를
+  받아 G7 legacy도 수용할 수 있으며, 최초 complete attempt 채택·전체 attempt 비용 합산,
+  core headline과 confirmation 안정성 분리, domain/goal/surface/category/attack-ID 분석을
+  구현했다. BU는 Wilson, UA·ASR은 task-cluster bootstrap 10,000회(seed 42) 95% CI다.
+- **독립 재감사:** G5-v2 원본 1,056/1,056행을 config/manifest/messages와 다시 대조했다.
+  누락·중복·unexpected·실행 오류·평가 error·미호출·미주입 0, strict 완료 1,054,
+  utility/attack unknown 2, 구조적 attack not_applicable 6이다. 재시도·외부 row 재사용은 0이다.
+- **재집계:** core BU 47/69=68.1%(95% CI 56.4–77.9), UA 562/925=60.8%
+  (task-cluster CI 51.3–69.8), ASR 93/919=10.1%(8.6–11.7)로 G5-v2 실측 문서와
+  일치했다. target/payload는 공격 987/987, ASR_injected도 93/919다. confirmation
+  30조건에서 원응답 변화 21, utility 변화 6, attack 판정 변화 0을 확인했다.
+- **사용량·artifact:** 전체 1,056 attempt의 3,336 calls, input 2,439,322 + output
+  1,110,808 = 3,550,130 tokens, 동결 정가 $1.0323831을 재계산했다.
+  `outputs/g6/crewai-g5-final-v2/`에 `g6_report.{json,md}`, `g6_metrics.csv`,
+  `g6_artifact_manifest.json`을 동결했다. G6 분석 중 provider preflight나 유료 API 호출은
+  하지 않았다.
+- **Gate:** G6 PASS, CrewAI 독립 벤치 완료. 기존 MAS 정렬 비교와 신청서의 실용적
+  비교 기여는 G7에 남는다. 커밋은 사용자 지시대로 수행하지 않았다.
+- **회귀 검증:** unit 98개와 integration 42개를 통과했다. 제한 sandbox에서 HumanEval
+  multiprocessing 소켓 3건이 환경 오류를 냈고, 해당 제한을 해제한 동일 42개는 전부
+  통과했다. manifest check·996행 core dry-run·read-only exact aggregation·compileall도
+  통과했으며 외부/유료 API 호출은 없었다.
+
 ## 2026-09-13 — G5-v2 유료 재실행 절차 문서화
 
 - `구현문서/G5_구현_기록.md`의 현행 상태·manifest·비적용 분모·script 경로·1-run

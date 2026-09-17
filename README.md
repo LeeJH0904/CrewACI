@@ -184,6 +184,26 @@ messages.jsonl = "어떻게 나왔나(과정)"
 위 둘은 run_id로 join됨
 ```
 
+### CrewAI G5/G6 통합 실행·집계
+
+연구 단계 실행은 manifest 기반 통합 오케스트레이터를 사용한다. 기본 동작은 계획만
+출력하는 **0-call dry-run**이며, `--suite`는 해당 manifest의 attack ID로 확장된다.
+
+```bash
+# 예: G5-v2 Math hijacking 계획 확인 — 모델/API 호출 없음
+.aciarena/bin/python scripts/run_experiment.py \
+  --config configs/experiments/g5_v2.yaml \
+  --stage core --matrix attacks --domain math --suite hijacking
+
+# 동결 G5-v2 원본을 read-only로 재감사·재집계
+.aciarena/bin/python scripts/aggregate_results.py
+```
+
+`--execute`를 붙이면 실제 모델 호출 경로에 진입한다. 동결된 G5-v2는 재실행하지 않으며,
+G7 유료 실행은 별도의 계획·예상 비용·사전 승인을 거친다. G6 최종 보고서는
+[`outputs/g6/crewai-g5-final-v2/g6_report.md`](outputs/g6/crewai-g5-final-v2/g6_report.md),
+구현·분모·통계 계약은 [`구현문서/G6_구현_기록.md`](구현문서/G6_구현_기록.md)에 있다.
+
 ### CrewAI G3 공식 runtime 기능 대조
 
 G3는 고정된 정상 태스크 10개를 재구현과 공식 CrewAI 1.15.21에서 각각 실행해 총 20 rows를

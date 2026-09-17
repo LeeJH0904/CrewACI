@@ -332,9 +332,9 @@
   `configs/experiments/g5_v2.yaml` 하나다. `manifests/g5/`는 v1 설계 이력으로 보존하고
   v2 실행 입력으로 사용하지 않는다.
 
-### 실행 오케스트레이터 구조 — 2026-09-11
+### 실행 오케스트레이터 구조 — 2026-09-11 결정 · 2026-09-16 구현
 
-- **D48 — 게이트별 오케스트레이터 통합(예정 리팩터, G6/G7 신설 전 수행):** 실행
+- **D48 — 게이트별 오케스트레이터 통합(G6 착수 시 구현 완료):** 실행
   엔진(`RecordedEvaluationSuite` + `catalog`/`records`/`run_writer`/`audit`)은 이미
   단일 공유 코드이며, G4/G5는 그 위의 **얇은 게이트별 드라이버**(`scripts/g4/run_g4_pilot.py`,
   `scripts/g5/run_g5_matrix.py`)만 분리돼 있다. LM Studio 로컬↔OpenAI API의 차이는
@@ -393,8 +393,14 @@
     코드 차원에서 사라진다. 특히 G7(legacy 7종 × math/code × 전 공격 × GPT-4o-mini)은
     비용이 크므로, 예산 통제는 코드가 아니라 **운영 절차(사전 비용 산정·수동 확인)**로만
     담보된다. 이 점을 감수한 결정임을 기록한다.
-  - **지금은 미실행:** G5가 현 드라이버 hash로 이미 동결됐고 버그 수정 재수집(D47)도
-    예정이라, 최소 재실행에 리팩터 스코프를 얹으면 위험만 커진다. 상태 🔲 대기 · ⏭ G6 착수 시점.
+  - **2026-09-16 구현:** `scripts/run_experiment.py`를 추가해 `--config`·`--stage`·
+    `--matrix`·`--report gate|progress`와 domain/suite/attack-ID 선택을 하나의 진입점으로
+    통합했다. `--suite`는 registry가 아니라 선택 config의 동결 manifest에서 goal과 domain이
+    맞는 ID를 결정적으로 확장한다. 기본은 `--execute` 없는 0-call dry-run이고, 실행 시
+    config-hash-aware resume·결정적 plan·종단 audit는 유지하되 preflight/비용 상한/세션
+    정지선/full-matrix 추가 opt-in은 이관하지 않았다. G4/G5 기존 드라이버는 이미 동결된
+    artifact 재현을 위해 삭제하지 않으며, 새 오케스트레이터 자체는 기존 G5 config source
+    fingerprint에 추가하지 않아 수집 identity를 바꾸지 않는다. 상태 ✅ 완료.
   - **근거·영향:** 핵심 로직 중복은 이미 없고 glue 층에만 분리가 있어 통합 이득은
     유지보수성·재발방지(드라이버 신설마다 반복되는 안전장치·리포트 로직 통일)다.
     `00`§4·§5, `03` 아키텍처, `scripts/` 구조.
@@ -443,3 +449,28 @@ CrewAI recorded 경로와 기존 legacy MAS 경로의 평가 비대칭 정리(`�
 - **G7 legacy 대조 헤드라인은 D30을 따른다**(논문 의미: 단순 평균·빈 응답=0). 즉 G6은 위 unknown/na 분해 규칙으로, 
   G7 대조표는 논문 규칙으로 — 두 리포트를 분리한다.
 - **참조:** `구현문서/수치_정리.md` §5·§6, `구현문서/G5_v2_실측결과.md` §5·§5.1.
+
+### D55 — G6 artifact·통계·완료 판정(2026-09-16)
+
+- **공통 집계기:** `aciarena/evaluation/aggregation.py`의
+  `g6-common-aggregation-v1`을 채택한다. CrewAI Pydantic class가 아니라 공통 field
+  mapping을 입력으로 사용해 향후 G7 legacy row도 같은 attempt 채택·분모·통계 규칙을
+  적용할 수 있게 한다. 허용된 재시도에서는 최초 complete attempt를 채택하고, complete가
+  없으면 마지막 보존 attempt를 진단용으로 남긴다. 비용은 채택 row가 아니라 모든 attempt를
+  합산한다.
+- **신뢰구간:** benign BU는 Wilson 95% CI, 같은 task에 여러 공격이 묶이는 UA·ASR 및
+  하위 분석은 task-cluster percentile bootstrap 10,000회(seed 42) 95% CI를 사용한다.
+  cluster는 task ID 순으로 정렬해 입력 row 순서와 무관한 결정적 표본열을 만든다.
+  공격 category와 surface가 완전 교차하지 않으므로 surface 차이를 독립 인과 효과로
+  해석하지 않는다.
+- **동결 결과:** `crewai-g5-final-v2`의 1,056/1,056행과 메시지를 독립 재감사해
+  누락·중복·unexpected·실행 오류·평가 error·미호출·미주입 0을 확인했다. strict 완료는
+  1,054이고 모델 출력 unknown 2건과 사전 비적용 6건을 공개한다. core 기준 BU
+  47/69=68.1%, UA 562/925=60.8%, ASR 93/919=10.1%다. ASR_injected도 93/919이며,
+  confirmation 30조건의 rep 1·2·3에서 attack 판정 변화는 0/30이다.
+- **artifact:** `outputs/g6/crewai-g5-final-v2/`에 JSON·Markdown·CSV와 source/generated
+  SHA-256 manifest를 동결한다. 분석 과정의 외부/유료 API 호출은 0회다. report version은
+  `g6-crew-independent-report-v1`, 최초 동결 report hash는
+  `1db3b6880a8bce4ed6add025238b5679ab92d5a9cf3fe75c455e729743167814`다.
+- **판정:** G6 Gate를 PASS하고 **CrewAI 독립 벤치를 완료**한다. 이 판정은 G7의 legacy
+  정렬 비교, 신청서의 기존 MAS 대비 위치 제시, Hierarchical/RQ2, PVI 완료를 뜻하지 않는다.

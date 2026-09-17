@@ -1,6 +1,6 @@
 # CrewAI × ACIArena 연구·구현 문서
 
-갱신일: 2026-09-11
+갱신일: 2026-09-16
 
 **G5~G7의 활성 구성은 Sequential 하나로 확정한다.** Hierarchical/GH는
 G7 완료 후 자원·일정 여유가 있을 때만 별도 승인으로 재검토하며,
@@ -58,17 +58,26 @@ G7 완료 후 자원·일정 여유가 있을 때만 별도 승인으로 재검�
   1건을 보존한다. input 2,433,353 + output 1,107,609 tokens, 정가 환산
   $1.02956835로 $2 상한 이내다. MathInvert의 worker-thread signal 결함은 원본을
   덮어쓰지 않고 성공 응답 38건을 main thread에서 무과금 재판정해 7개 판정을 교정한
-  versioned artifact로 남겼다(D46). 다음은 G6 감사·집계·보고서 동결이다.
+  versioned artifact로 남겼다(D46). 이 수집은 이후 D53에서 삭제된 v1 진단 이력이다.
 - 2026-09-11 재감사에서 MathInvert의 int/float 외 정답을 그대로 목표로 삼던 의미 결함과
   config_hash 없는 matrix resume, SDK 내부 재시도·불완전 usage 비용 계측 문제를 추가로
   수정했다. MathInvert v2는 파싱된 수학 객체의 가법 역원이며 39개 중 의미상 구별할 수
   없는 4개 task만 비적용이다. `manifests/g5-v2/`와
-  `configs/experiments/g5_v2.yaml`을 별도 생성했고, v2 preflight 전까지 유료 실행은
-  잠겨 있다. 따라서 현재 단계는 **G5-v2 2차 벤치마크 실행 전**이며 G6로 진입하지 않는다.
+  `configs/experiments/g5_v2.yaml`을 별도 생성했다(D49~D51). 이는 v2 재수집 전 준비 이력이다.
 - 2026-09-12 Claude 재검증 권고를 반영했다. 현재 소스에서 G0~G4의 과거 config를
   in-place 재감사하면 drift가 발생하는 것이 정상이며, 당시 hash 계약의 재생성·재감사는
   G4 완료 커밋 `a1d662e`에서만 수행한다. 오해 소지가 있던 G5-v1 readiness config와
   버그 실행 output은 삭제했고, 실행 가능한 최종 계약은 `g5_v2.yaml`만 유지한다(D52·D53).
+- 2026-09-13 수정 코드의 `crewai-g5-final-v2`를 실제 수집했다. 1,056/1,056행이
+  실행·저장·감사를 통과했고 전 행 `status=success`, strict 완료 1,054, 모델 출력
+  unknown 2, 구조적 not_applicable 6이다. 3,336 calls·3,550,130 tokens·동결 정가
+  $1.0323831이며 v1 수치를 최종 결과로 사용하지 않는다.
+- 2026-09-16 G6를 완료했다. 통합 dry-run 기본 오케스트레이터와 legacy-compatible 공통
+  집계기를 추가하고 G5-v2 원본을 독립 재감사했다. core 기준 BU 47/69=68.1%,
+  UA 562/925=60.8%, ASR 93/919=10.1%이며 target/payload 987/987, 재시도·실행 오류·
+  평가 error·누락·중복 0이다. JSON/Markdown/CSV와 hash manifest를
+  `outputs/g6/crewai-g5-final-v2/`에 동결해 **CrewAI 독립 벤치를 완료**했다.
+  다음 단계는 별도 파일럿·예산 승인이 필요한 G7 cross-MAS 비교다(D55).
 - ACIArena_관련_문서/ 폴더 내부에 '연구개발 사업 선청서'와 'ACIArena_CrewAI_통합_정리' 문서가 저장되어있다.
     'ACIArena_CrewAI_통합_정리.md'의 경우, 초반의 통합 구상안을 담고있으며, 현재 진행 과정도 해당 문서를 중심으로 한다.
     다만 초기 작성된 문서이므로, 'ACIArena_CrewAI_통합_정리.md' 문서와 'archive/' 폴더 내부 문서 및 '00_구현_가이드.md' 문서 내용상의 불일치가 있다면, 'archive/' 폴더 내부 문서 및 '00_구현_가이드.md' 문서 내용을 우선한다.
