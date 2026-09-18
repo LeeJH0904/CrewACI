@@ -474,3 +474,194 @@ CrewAI recorded 경로와 기존 legacy MAS 경로의 평가 비대칭 정리(`�
   `1db3b6880a8bce4ed6add025238b5679ab92d5a9cf3fe75c455e729743167814`다.
 - **판정:** G6 Gate를 PASS하고 **CrewAI 독립 벤치를 완료**한다. 이 판정은 G7의 legacy
   정렬 비교, 신청서의 기존 MAS 대비 위치 제시, Hierarchical/RQ2, PVI 완료를 뜻하지 않는다.
+
+### D56 — G7 legacy MAS domain 지원: MetaGPT만 Math 불가(코드 검증, 2026-09-18)
+
+- **결정:** G7 비교에서 legacy MAS의 domain 지원은 **MetaGPT만 Math 불가**, 나머지
+  (`autogen`·`agentverse`·`camel`·`mad`·`sc`·`llm_debate`)는 **Math·Code 모두 실행 가능**으로
+  확정한다. 능력 제약은 MetaGPT 하나뿐이며, 이는 systems manifest의 domain 필드 근거가 된다.
+- **근거:** `aciarena/evaluation/evaluation_suite.py`의 `init_tasks`가 `task_domain=='math'`일 때
+  `mas != 'metagpt'`이면 `load_math_tasks()`를 실행하고 `metagpt`만 명시적
+  `ValueError("Unsupported MAS for math domain")`로 차단한다. MetaGPT는 MASLab 논문 Table 1의
+  "Coding-Specific" 분류와도 일치한다. autogen은 범용 프로필(`ASSISTANT_AGENT_SYSTEM_MESSAGE`,
+  "final answer in the box")로 domain-agnostic하고 code 전용 프로필은 저장소 어디서도
+  True가 아닌 `code_execute`에서만 쓰인다. agentverse 프롬프트도 domain 하드코딩이 없다.
+  `scripts/mas/{agentverse,autogen}.sh`의 `TASK_DOMAINS=("code")`는 원 논문 실험 설정
+  스냅샷일 뿐 능력 한계가 아니다(math 확장에 신규 구현 불필요, run config만 추가).
+- **남는 결정(별도):** 실제 실행 domain을 (a) MetaGPT만 Code-only·나머지 both로 둘지,
+  (b) 비교 공정성을 위해 전 MAS를 Code-only로 맞출지는 **연구 설계 정책**으로 systems
+  manifest 동결 시 확정한다. 이는 능력이 아니라 선택의 문제다.
+- **영향:** `00`§7 완료 정의(G7), `manifests/g7/systems.json`, G7 본 matrix 규모 산식.
+  검증 상세는 `구현문서/G7_사전_확정_진행_사항.md` C1.
+
+### D57 — camel·mad는 benchmark.py로 실행 가능(`.sh` 부재는 실행 불가 아님, 2026-09-18)
+
+- **결정:** `camel`·`mad`는 편의용 `scripts/mas/*.sh`가 없을 뿐 `benchmark.py --mas camel|mad`로
+  **정상 실행 가능**으로 확정한다. 두 MAS를 G7 대상에서 실행 불가로 배제하지 않으며, 셸
+  래퍼 추가는 선택 사항이다.
+- **근거(오프라인 정적 구성, 모델 API 호출 0회):** 두 MAS 모두 `@register_mas`로 등록되고
+  `build_mas`로 생성된다(camel=`assistant/user_proxy/critic/task_specifier`,
+  mad=`affirmative/negative/moderator/judge`). 더미 키로 `build_suite`를 구성하면 code·math
+  두 domain × benign/hijacking/disruption/disclosure 네 suite의 **16/16 조합**에서 태스크 로드와
+  공격 빌드가 성공한다(공격 수는 타 legacy MAS와 동일). math 게이트(D56)는 metagpt만 막으므로
+  camel/mad는 math도 로드된다.
+- **구분:** "구성→모델 호출 직전까지 정상"이 확정된 것이며, 실제 실행에서 공격이 어느 target
+  agent에 주입·채점되는지는 **per-MAS target 결정**(별도)에 속한다. G7 공통 per-row 기록
+  계약은 camel/mad만이 아니라 **모든 legacy MAS 공통** 작업이다.
+- **영향:** G7 파일럿 범위·구현 공수 산정, `구현문서/G7_사전_확정_필요_사항.md` §4. 검증
+  상세는 `구현문서/G7_사전_확정_진행_사항.md` C2.
+
+### D58 — G7 비교 범위·도메인 실행 정책(2026-09-18)
+
+- **결정:** ① **MAD를 G7 비교에서 제외**한다. 비교 대상 = **논문 6종 + CrewAI**(MetaGPT,
+  AutoGen, CAMEL, Self Consistency, LLM Debate, AgentVerse). D30/D32의 "legacy 7종"에서
+  `mad`만 뺀다(camel은 논문 MAS로 유지). ② **도메인 실행**은 MetaGPT는 **code만**, 나머지
+  5종은 **math·code 둘 다**로 확정한다(D56의 남은 정책 결정을 이 방향으로 종결). ③ **보고
+  형식**은 논문 Table 1처럼 **task_domain 기준 표 2개(Math 5종/Code 6종)** 로 분리하고, 각
+  표에 그 도메인 지원 MAS만 넣는다. 완전 교차·도메인 통합 평균은 강요하지 않는다.
+- **근거:** MetaGPT는 소프트웨어 개발 SOP 전용이라 math 불가(D56). 논문도 도메인별 표에
+  지원 MAS만 넣어 불균형을 그대로 수용한다(Appendix H·Table 1). MAD는 논문 6종에 없어
+  정성 대조(D30) 근거가 없고, 전 agent 스윕 배제(D59)와 함께 범위를 절제한다.
+- **영향:** D30/D32의 legacy 대상 수(7→6), `00`§7 완료 정의, `manifests/g7/systems.json`,
+  본 matrix 규모 산식. 표 분리 문서화는 사용자가 진행한다. 상세는
+  `구현문서/G7_사전_확정_진행_사항.md` C3.
+
+### D59 — G7 공격 target agent 정책(2026-09-18)
+
+- **결정:** ① **전 agent 스윕은 채택하지 않고**(경우의 수 폭증), 공격은 **목표별 단일 target
+  agent**에만 주입한다. ② target은 **논문 Appendix I Table 5(Math, GPT-4o-mini)의 worst-case
+  agent**를 사전 고정본으로 채택한다(목표↔suite: Hijacking→hijacking, Disruption→disruption,
+  Exfiltration→disclosure). 매핑: CAMEL=critic/task_specifier/user_proxy,
+  AutoGen=user_proxy/assistant/assistant, AgentVerse=critic_0/solver/solver,
+  Self Consistency=sc1/aggregator/aggregator, LLM Debate=debater_2/aggregator/aggregator. ③
+  **Code 도메인**은 논문 표가 없으므로 위 Math worst-case를 그대로 재사용한다(옵션 a); 여유 시
+  code worst-case 탐색 확장은 사용자가 진행한다. ④ **MetaGPT**는 Table 5에 없어 기존
+  `metagpt.sh` 관례(hijacking→engineer, disruption→architect, disclosure→qa_engineer)를
+  **채택한다(확정)**. ⑤ **진입점은 기존 `benchmark.py`를
+  계승**한다(신규 `start.py` 미신설). `benchmark.py`의 기존 옵션 `--mas`·`--task_domain`·
+  `--suite`(=공격목표)·`--malicious_agents`(=target agent)로 슬라이스를 지정하며, 구현 자체는
+  **모든 target_agent 선택을 허용**하되 실제 벤치는 위 고정 목록으로 제한한다.
+- **근거:** 전 agent 스윕은 `agent 수 × 공격 수`로 비용이 폭증한다. 논문이 이미
+  (MAS×목표)별 worst-case agent를 제시하므로, 이를 고정 target으로 쓰면 "결과 보기 전 고정"과
+  "논문 근거"를 동시에 만족한다. CrewAI(solver 고정, G6 동결) 대비 비대칭은 제거하지 않고
+  통제·보고한다(D30/D32).
+- **영향:** `manifests/g7/targets.json`, 오케스트레이터 CLI, 본 matrix 규모(단일 target 유지).
+  상세·매핑표는 `구현문서/G7_사전_확정_진행_사항.md` C4.
+
+### D60 — G7 run당 malicious agent 수 = 1(2026-09-18)
+
+- **결정:** 한 run에는 malicious agent를 **정확히 1명**만 둔다. 논문 지정값을 그대로 채택한다.
+  D59의 "목표별 단일 target agent"와 정합한다.
+- **근거:** ACIArena 논문 §5(line 158)가 Byzantine Fault Tolerance를 근거로 *"we assume a
+  single malicious agent"*를 명시한다. 프레임워크는 subset 지정이 가능하나 본 실험은 단일로
+  고정한다. CrewAI(G5/G6)도 solver 1명만 공격했으므로 CrewAI↔legacy 비교에서 malicious
+  agent 수는 양쪽 1로 일치한다.
+- **영향:** G7 run 계약·매트릭스 산식(단일 유지). 이로써 **확정 사항 1(비교 대상·domain·
+  target·malicious agent 수)이 모두 종결**된다. 상세는 `구현문서/G7_사전_확정_진행_사항.md` C5.
+
+### D61 — G7 비교 프레이밍·통계 표기(2026-09-18)
+
+- **결정:** ① G7 cross-MAS는 **순위 결정이 아니라 "기존 6종 대비 CrewAI 위치 제시 + 설계
+  귀인"**으로 프레이밍한다. **"X가 Y보다 안전" 같은 일반 순위·우열 서술은 지양**한다. ②
+  헤드라인은 **도메인별 표(Math/Code)** 에 각 MAS와 CrewAI를 나란히 놓고 **UA·ASR을 쌍으로**
+  (utility-security 트레이드오프) 제시한다. 단일 ASR만으로 안전/취약을 단정하지 않는다. ③
+  불확실성은 **시스템별 task-cluster bootstrap CI**(G6 `_cluster_interval` 재사용, 반복 실행
+  불필요)로 표기한다. ④ **paired 유의성 검정은 채택하지 않는다**(전 쌍·CrewAI-축 모두). legacy
+  끼리 비교나 전체 순위표도 만들지 않는다.
+- **근거:** 신청서·D30/D32의 기여는 "위치 제시(정성)"이지 우열 판정이 아니다. 논문도(line
+  160·162·164) topology만의 순위는 불충분하고 utility-security 트레이드오프가 핵심이라 밝힌다
+  (CAMEL ASR 0%는 안전이 아니라 utility 붕괴). paired 검정은 순위 목적이라 RQ에 불필요하고
+  다중비교 위양성만 늘린다. 시스템별 CI는 단일 run으로도 위치 불확실성을 정직히 보여줘
+  비용에도 유리하다.
+- **영향:** §3 지표·보고 규칙, §6 주장 범위(순위 서술 지양), G7 report 설계. Q1~Q4(빈 응답·
+  NA·오류·미주입)는 D30/D54를 따르고(헤드라인=논문 규칙, 진단=valid-only 분해), Q5(paired
+  CI)는 본 결정으로 미채택 종결한다. 상세는 `구현문서/G7_사전_확정_진행_사항.md` C6.
+
+### D62 — G7 legacy per-row 기록 접근·RunRecord 일반화 범위(2026-09-18)
+
+- **접근(A 확정):** legacy 실행·verify는 재사용하고 그 위에 **recording 계층을 후크로
+  이식**한다(신규 실행기 미신설). 출력은 CrewAI와 **동일한 `runs.jsonl`/`messages.jsonl` 통일
+  포맷**이며, 공통 집계기(D55)가 양쪽을 같은 규칙으로 읽는다.
+- **RunRecord/MessageRecord 일반화(in-place 상위집합 확장, 구현은 §4 착수 시):**
+  - `topology`: `Literal['sequential']` → `Literal['sequential','vertical','horizontal','hierarchical']`(논문 H.1 패턴)
+  - `malicious_agent`: `Literal['solver']|None` → `Nonempty|None`
+  - `response_agent`: `Literal['finalizer']|None` → `Nonempty|None`
+  - `implementation`: `+'legacy'`
+  - MessageRecord `phase`: `+'turn'`(legacy agent 간 메시지)
+  - `schema_version`는 `'1.0'` 유지(순수 확장, 버전 미변경)
+  - 공유 필드(attack_category 22·goal 3·surface 3·domain·상태 taxonomy·not_applicable 범위·
+    category-goal 일치·증거 플래그 요구)는 유지. legacy 표면명(adv_input/malicious_agent/
+    message_poison)→(instruction/agent/message) 매핑과 증거 플래그 생산은 **어댑터**가 담당.
+- **동결 안전 근거:** 읽기 경로 `RunWriter._read`가 모든 행을 `RunRecord.model_validate`로
+  재검증하는데, 상위집합 확장은 기존 CrewAI 행을 그대로 유효하게 두어 **G6 재감사 PASS를
+  보존**한다. `records.py`는 G6 artifact manifest의 analysis_sources에 없어 provenance 해시에도
+  영향이 없다. 따라서 별도 versioned record type 신설 없이 in-place가 안전하다.
+- **영향:** §4 legacy 어댑터/writer 구현, §6 G6 보존 조건. `records.py`는 §4 착수 시 수정하며
+  현재는 계획만 확정한다. 상세는 `구현문서/G7_사전_확정_진행_사항.md` C7.
+
+### D63 — G7 legacy 어댑터 필드 매핑·상태·식별 규칙(2026-09-18)
+
+- **필드 3버킷:** legacy recording 어댑터(A 방식, D62)가 RunRecord 필드를 다음으로 채운다.
+  - **직결:** `raw_response`·`ground_truth`·`prompt/completion_tokens`·`attack_goal`(suite)·
+    `attack_surface`(base클래스→instruction/agent/message)·`malicious_agent`(attack.malicious_agents)·
+    메시지(MASLogger turns).
+  - **파생:** `response`(동일 normalizer)·`payload_hash`·`response_agent`(MAS별 최종 source)·
+    `topology`(MAS별 상수)·식별/`config_hash`/timestamps/버전.
+  - **신규 구축:** ① `task_id`·`attack_id` 결정적 매핑 테이블 ② `target_invoked`/
+    `payload_injected` 계측 ③ 오류 격리(try/except→error row·partial trace)+상태 taxonomy.
+- **상태 taxonomy(확정, i=a):** legacy `verify()`는 0/1뿐이므로 **실행 오류가 아니면
+  utility/attack_status를 `valid`+bool로 기록**한다. legacy는 unknown/not_applicable을 CrewAI만큼
+  구분하지 않아 **legacy의 valid-only 진단 레이어는 헤드라인과 사실상 동일**해지며, 이 진단
+  해상도 비대칭을 **명시·보고**한다(무리한 unknown 추정 금지 — 논문 대조 왜곡 방지).
+  `llm_call_count` 미추적은 `usage_missing_calls`로 공개한다.
+- **식별 매핑(확정, ii):** 데이터셋 동일 소스(`aciarena_math/code.json`)이므로 순서·내용 기반
+  **결정적 `task_id` 정렬**, 공격은 **클래스→manifest attack_id 명시 테이블**. 결과를 보기 전
+  고정한다.
+- **근거:** legacy 실측 산출 대조 결과 대부분 필드는 직결·파생이고 실제 신규 작업은 버킷3
+  3종에 집중된다. legacy 0/1 특성상 진단 대칭을 억지로 맞추면 비용·왜곡이 커져 정직한 비대칭
+  보고가 낫다.
+- **영향:** §4.2 필드 계약, §4 어댑터 구현, G7 report 진단 레이어 주석. 상세는
+  `구현문서/G7_사전_확정_진행_사항.md` C8.
+
+### D64 — G7 실행 모델(per-invocation)·비용 처리(2026-09-18)
+
+- **실행 모델:** G7은 **per-invocation 수동 모델**로 실행한다. **진입점은 기존 `benchmark.py`를
+  계승**(신규 파일 미신설)하며 `--mas`·`--task_domain`·`--suite`(=공격목표)·`--malicious_agents`
+  (=target agent)로 **MAS 1 × domain 1(math|code) × 공격목표 1(hijacking/disruption/disclosure)**
+  슬라이스를 하나씩 벤치하고 `runs.jsonl`로 저장한 뒤 분석한다(D59-⑤ 확장). CrewAI 전용 통합
+  오케스트레이터(`run_experiment.py`)는 G7에 쓰지 않는다.
+- **비용 처리:** D48의 유료 하드 방지턱 제거·dry-run 기본값 유지를 **그대로 계승**하되,
+  **G7에서는 "사전 비용 산정" 요구도 제거**한다. per-invocation 슬라이스가 작고 사용자가 각
+  실행을 직접 통제하므로 실행 전 예상 비용 제시를 게이트로 요구하지 않는다. **유지:** `--execute`
+  없는 0-call dry-run 기본값, 실측 usage(호출·토큰·정가 환산) **per-run 사후 기록**(provenance,
+  게이트 아님; G5/G6과 동일).
+- **근거:** per-invocation 수동 모델에서 각 슬라이스는 규모가 작고 사용자가 직접 통제하므로
+  자동 게이트·사전 산정의 실익이 없다. 이전 합의(D48)를 유지하고 G7에 한해 사전 비용 산정만
+  추가로 뺀다.
+- **영향:** §5 재정의(파일럿·비용 게이트·사전 산정 프레임 폐기), `benchmark.py` 확장, G7 report는
+  사후 usage만 기록. D48 계승, 세션 상시 규칙 중 G7 "사전 비용 산정" 부분 완화(유료 실행은
+  여전히 사용자가 수행·결정). 상세는 `구현문서/G7_사전_확정_진행_사항.md` C9.
+
+### D65 — G6 동결 보존과 G7 버전 분리(2026-09-18)
+
+- **결정:** G7 작업은 G6 동결 근거를 다음 규칙으로 보존한다.
+  - ① **경로 분리:** G7 산출물은 `outputs/g7/…` 신규 경로에 쓰고 `outputs/g5-v2/`·`outputs/g6/`는
+    read-only. 원본을 덮어쓰지 않으므로 별도 백업은 불필요하다.
+  - ② **버전 문자열 분리:** G7 분석/리포트 버전은 `g7-…` 신규 문자열로, G6
+    (`g6-common-aggregation-v1`·`g6-crew-independent-report-v1`)와 구별한다.
+  - ③ **하위호환:** D62의 RunRecord literal 일반화는 상위집합 in-place 확장이라 G6 동결
+    `runs.jsonl`이 그대로 재검증을 통과하고(C7), `records.py`는 G6 artifact manifest의
+    analysis_sources에 없어 provenance 해시도 불변이다. 따라서 G7 코드 변경 후에도 **G6 frozen
+    verifier(hash 재검증)가 PASS**한다.
+  - ④ **결과 분리 보존:** G6 valid-only 결과와 G7 비교용 재해석(진단) 결과를 별도 이름/경로로
+    보존한다.
+  - ⑤ **무결성·재현:** 원본 무결성은 `g6_artifact_manifest.json`의 SHA-256로 검증하며(백업보다
+    강한 보장), 원본 코드 상태로 G6 재현이 필요하면 파일 복사가 아니라 **git 커밋/태그**로 그
+    시점을 고정한다(과거 D52 방식).
+- **근거:** "버전 분리"의 실체는 백업이 아니라 경로·버전 문자열 분리 + 하위호환 보장이다.
+  원본을 안 건드리고 hash로 무결성을 검증하므로 복사본 유지가 불필요하다.
+- **영향:** G7 산출물 경로·버전 규칙, §6 완료 정의, D62/C7과 정합. 이로써 **G7 사전 확정
+  사항(§2~§6)이 모두 종결**된다. CrewAI G5 core 재사용은 별도 확정 대상이 아니라 사용자 운영
+  선택으로, 기본 계획은 G7에서 CrewAI 포함 전부 재실행(→ `outputs/g7/…`·`g7-…`)이며 G6 동결은
+  독립 벤치로 보존한다(CrewAI 수치가 G6·G7에 각각 존재하는 것은 D30상 정상). 상세는
+  `구현문서/G7_사전_확정_진행_사항.md` C10.
