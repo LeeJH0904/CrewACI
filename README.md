@@ -73,7 +73,7 @@ python3 benchmark.py \
   [--defense none] \
   [--task_domain math] \
   [--max_workers 1] \
-  [--output_dir logs] \
+  [--output_dir outputs/g7] \
   [--malicious_agents aggregate]
 ```
 
@@ -84,8 +84,8 @@ python3 benchmark.py \
 | `--attack_mode` | `continuous` | `continuous` | 공격 실행 방식을 지정합니다. 현재는 `continuous`만 등록되어 있습니다. |
 | `--defense` | `none`, `aci_sentinel`, `delimiter`, `bert_detector`, `sandwich` | `none` | 에이전트의 입력 또는 출력에 적용할 방어 기법을 지정합니다. |
 | `--task_domain` | `math`, `code` | `code` | 평가 데이터셋의 도메인을 지정합니다. `metagpt`는 `math`를 지원하지 않습니다. |
-| `--max_workers` | 양의 정수 | `4` | 동시에 처리할 평가 작업 수를 지정합니다. API 사용량 제한이 낮다면 값을 줄이세요. |
-| `--output_dir` | 디렉터리 경로 | `logs` | 상세 MAS 로그를 저장할 디렉터리입니다. 종합 `result.json`은 `logs/<model>/<domain>/<mas>/<suite>/` 아래에 저장됩니다. |
+| `--max_workers` | 양의 정수 | `1` | 동시에 처리할 평가 작업 수를 지정합니다. G7 legacy 경로는 결정성 보장을 위해 `1`만 허용합니다. |
+| `--output_dir` | 디렉터리 경로 | `outputs/g7` | per-row 기록(`runs.jsonl`·`messages.jsonl`)을 저장할 루트입니다. 실제 저장 위치는 `<output_dir>/<experiment_id>/` 이며, 동결 경로(`outputs/g5-v2`·`outputs/g6`) 하위 쓰기는 거부됩니다. |
 | `--malicious_agents` | 하나 이상의 에이전트 이름 | MAS별 기본값 | 공격에 의해 악성으로 동작할 에이전트를 지정합니다. 여러 이름은 공백으로 구분합니다. |
 
 
@@ -96,14 +96,16 @@ python3 benchmark.py \
 
 | 옵션 | 값 · 기본값 | 추가 시점 | 적용 범위 | 설명 |
 | --- | --- | --- | --- | --- |
-| `--limit` | 양의 정수 · 없음 | 2026-08-31 (CrewAI 통합) | 전체 MAS | 빠른 검증용으로 평가 태스크 수를 제한한다. 미지정 시 전체 태스크를 평가한다. |
-| `--attack_ids` | manifest attack ID 하나 이상 · 없음 | G0 | crewai 전용 | recorded 경로에서 실행할 대표 공격 ID를 명시한다. 공격 suite면 **필수**이며 `<category>.<surface>.v1` 형식이다. |
-| `--experiment_id` | 디렉터리 안전 문자열 · 없음 | G0 | crewai 전용 | 출력 `<output_dir>/<experiment_id>/{runs,messages}.jsonl` 의 실험 식별자. |
-| `--experiment_config` | YAML 경로 · `configs/experiments/core.yaml` | G0 | crewai 전용 | G0 개발 계약(단일 출처). model/Judge 개별 override를 거부한다. |
-| `--phase` | `calibration`·`pilot`·`core`·`confirmation` · `pilot` | G0 | crewai 전용 | 기록할 실행 단계(run_id 결정 요소). |
-| `--repetition` | 양의 정수 · `1` | G0 | crewai 전용 | 확인 반복 번호(run_id 결정 요소). |
-| `--resume` | 플래그 · off | G0 | crewai 전용 | 완료된 run(정상 false 판정 포함)을 재사용해 건너뛴다. |
-| `--retry_errors` | 플래그 · off | G0 | crewai 전용 | 기록된 일시적 provider/timeout 오류만 총 3시도까지 재시도한다. |
+| `--execute` | 플래그 · off | G7 | 전체 MAS | 실모델 호출을 허용한다. 생략 시 기본은 계획만 출력하는 **0-call dry-run**이다. |
+| `--limit` | 양의 정수 · 없음 | 2026-08-31 (CrewAI 통합) | 전체 MAS | 빠른 검증용으로 평가 태스크 수를 제한한다. 미지정 시 전체 태스크를 평가한다. `--task_ids`와 동시 사용 불가. |
+| `--task_ids` | manifest task ID 하나 이상 · 없음 | G7 | 전체 MAS | 실행할 정확한 task ID를 지정한다. `--limit`와 함께 쓸 수 없다. |
+| `--attack_ids` | manifest attack ID 하나 이상 · 없음 | G0 | crewai + G7 legacy | 실행할 대표 공격 ID를 명시한다. crewai 공격 suite면 **필수**이며 `<category>.<surface>.v1` 형식이다. G7 legacy에서는 생략 시 해당 목표의 attack이 자동 선택되고, 지정 시 그 목표 내 일부만 실행한다. |
+| `--experiment_id` | 디렉터리 안전 문자열 · 없음 | G0 | crewai + G7 legacy | 출력 `<output_dir>/<experiment_id>/{runs,messages}.jsonl` 의 실험 식별자. 미지정 시 `g7-cross-mas-v1`. |
+| `--experiment_config` | YAML 경로 · `configs/experiments/g5_v2.yaml` | G0 | crewai 전용 | 개발 계약(단일 출처). model/Judge 개별 override를 거부한다. |
+| `--phase` | `calibration`·`pilot`·`core`·`confirmation` · `core` | G0 | crewai + G7 legacy | 기록할 실행 단계(run_id 결정 요소). |
+| `--repetition` | 양의 정수 · `1` | G0 | crewai + G7 legacy | 확인 반복 번호(run_id 결정 요소). |
+| `--resume` | 플래그 · off | G0 | crewai + G7 legacy | 완료된 run(정상 false 판정 포함)을 재사용해 건너뛴다. |
+| `--retry_errors` | 플래그 · off | G0 | crewai + G7 legacy | 기록된 일시적 provider/timeout 오류만 총 3시도까지 재시도한다. |
 
 > ⚠️ **`crewai_seq_nodeleg`의 `--suite` / `--attack_ids` 주의**
 > - `--suite` 기본값은 `hijacking`(공격 suite)이다. crewai에서 `--suite`를 생략하면 공격 suite로 잡히지만 `--attack_ids`가 없어 `Select unique --attack_ids explicitly for an attack suite` 오류가 난다.
@@ -173,8 +175,8 @@ G2부터 각 실행 결과를 반환하기 전에 선택한 task/attack 계획�
   --matrix core-attacks --allow_additional
 ```
 
-**이제 모든 로그는 '--experiment_id' 옵션으로 지정한 이름으로 만들어지는 logs/~ 폴더에 저장됩니다.**
-* '--experiment_id' 옵션을 지정하지 않으면 자동으로 [crewai-development-v1]로 생성됩니다.
+**이제 모든 로그는 `<output_dir>/<experiment_id>/` 폴더에 저장됩니다(`--output_dir` 기본값 `outputs/g7`).**
+* '--experiment_id' 옵션을 지정하지 않으면 자동으로 [g7-cross-mas-v1]로 생성됩니다.
 * 각 실험 폴더에는 `runs.jsonl`·`messages.jsonl` 외에 `configs/<hash>.json`(설정 스냅샷)·`.writer.lock`·`.run_locks/`가 함께 생성되며, 같은 `--experiment_id`로 다시 실행하면 기존 파일에 append(누적)됩니다.
 
 ```text
@@ -199,10 +201,43 @@ messages.jsonl = "어떻게 나왔나(과정)"
 .aciarena/bin/python scripts/aggregate_results.py
 ```
 
-`--execute`를 붙이면 실제 모델 호출 경로에 진입한다. 동결된 G5-v2는 재실행하지 않으며,
-G7 유료 실행은 별도의 계획·예상 비용·사전 승인을 거친다. G6 최종 보고서는
+`--execute`를 붙이면 실제 모델 호출 경로에 진입한다. 동결된 G5-v2는 재실행하지 않는다.
+G7 유료 실행은 D64에 따라 사전 비용 산정·승인 게이트 없이 per-invocation으로 진행한다
+(기본은 dry-run이며 유료 호출은 `--execute` 명시 시에만 발생). G6 최종 보고서는
 [`outputs/g6/crewai-g5-final-v2/g6_report.md`](outputs/g6/crewai-g5-final-v2/g6_report.md),
 구현·분모·통계 계약은 [`구현문서/G6_구현_기록.md`](구현문서/G6_구현_기록.md)에 있다.
+
+### CrewAI G7 cross-MAS 통합 벤치·집계
+
+G7은 논문 6종(MAD 제외)과 CrewAI를 **동일한 per-row 스키마**로 기록해 나란히 비교하는
+단계다. legacy MAS는 `benchmark.py`의 recording 어댑터를 거치고, CrewAI는 기존 recorded
+계약을 그대로 쓴다. 실행은 **per-invocation**으로, `MAS × task_domain(math|code) × suite(목표)`
+슬라이스를 하나씩 돌려 `outputs/g7/<experiment_id>/`에 누적한다. 기본은 0-call dry-run이며
+`--execute` 명시 시에만 유료 경로에 진입한다. 대상 agent·task/attack ID는 결과를 보기 전
+`manifests/g7/{systems,targets,identifiers}.json`에 결정적으로 고정된다.
+
+```bash
+# 계획 확인 — 모델/API 호출 없음(0-call dry-run)
+.aciarena/bin/python benchmark.py --mas camel --task_domain math --suite hijacking
+
+# 한 슬라이스 실측 — 유료(--execute), 결과는 outputs/g7/<experiment_id>/ 에 저장
+.aciarena/bin/python benchmark.py --mas camel --task_domain math --suite hijacking --limit 2 --execute --experiment_id g7-pilot
+```
+
+집계는 수집된 원본을 read-only로 읽어 CrewAI·legacy에 동일 규칙을 적용한다(paired 검정·
+순위표 없음, 시스템별 task-cluster bootstrap CI). 예정 6,426 조건이 완결되어야 정식 리포트를
+쓰며, 미완결 상태의 파일 산출은 `--allow-partial-write`를 명시해야 한다.
+
+```bash
+# read-only 집계 미리보기(파일 미생성)
+.aciarena/bin/python scripts/aggregate_g7.py --records-dir outputs/g7/g7-pilot
+
+# G6 동결 산출물 read-only 무결성 재검증
+.aciarena/bin/python scripts/verify_g6_frozen.py
+```
+
+단계·결정 근거는 [`CrewAI_ACIArena_연구계획/07_G7_구현단계.md`](CrewAI_ACIArena_연구계획/07_G7_구현단계.md),
+구현 기록은 [`구현문서/G7_구현_기록.md`](구현문서/G7_구현_기록.md)에 있다.
 
 ### CrewAI G3 공식 runtime 기능 대조
 
