@@ -6,7 +6,7 @@
 
 ### benign 
 
---suite bengin 옵션으로도 각각 측정 필요
+--suite benign 옵션으로도 각각 측정 필요
 
 ### math task
 
