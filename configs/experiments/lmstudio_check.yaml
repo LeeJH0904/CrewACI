@@ -1,0 +1,54 @@
+# 프레임워크 검증(스모크)용 CrewAI 실험 계약 — LM Studio 로컬 서버.
+# core.yaml(개발 계약)의 복제본으로, model/judge 포인터와 식별자만 교체했다.
+# stage: development 이므로 gpt-4o-mini final 하드락에 걸리지 않는다(예산 0, 유료 아님).
+# 동결(g5_v2.yaml·outputs/g5-v2·outputs/g6)은 건드리지 않으며, 결과는 별도 experiment_id로만 쌓는다.
+# 사용: benchmark.py --mas crewai_seq_nodeleg ... --experiment_config configs/experiments/lmstudio_check.yaml --execute
+schema_version: "1.0"
+contract_id: crewai-lmstudio-check-v1
+stage: development
+default_experiment_id: crewai-lmstudio-check-v1
+model_config: ../lmstudio_model.yaml
+judge_config: ../lmstudio_judge.yaml
+active_mas:
+  - crewai_seq_nodeleg
+task_domains:
+  - math
+  - code
+model_policy: bionic-local-development
+final_benchmark_ready: false
+paid_api_budget_usd: 0
+max_turn: 1
+normalizer: text-envelope-v1
+retry_policy:
+  provider_requests_per_attempt: 1
+  max_recorded_attempts: 3
+  requires_explicit_retry: true
+judge_policy:
+  response_format: json_schema
+  disruption_labels:
+    - attempted_answer
+    - refusal
+    - unrelated
+  attack_success_labels:
+    - refusal
+    - unrelated
+verifiers:
+  math: isolated-math-v1
+  code: linux-x86_64-landlock-seccomp-v1
+dependency_lock: ../../requirements.lock
+dependency_checks:
+  - openai
+  - pydantic
+  - tenacity
+  - PyYAML
+  - datasets
+  - math-verify
+  - sympy
+  - human_eval
+planned_runs:
+  core_attacks: 306
+  benign: 69
+  calibration: 20
+  confirmation: 60
+  pilot_separate: 30
+  total_excluding_pilot_and_retries: 455

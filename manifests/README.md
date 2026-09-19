@@ -271,8 +271,9 @@ BU·UA·ASR·비용의 전체 원본 재계산과 artifact 동결은 G6 집계 �
 .aciarena/bin/python benchmark.py --mas crewai_seq_nodeleg --suite benign --task_domain math --limit 1 --experiment_id g0-math-dev --phase pilot --output_dir logs
 ```
 
-공격 실행은 suite와 일치하는 `--attack_ids`를 명시한다. 예를 들어
-`--suite hijacking --attack_ids hijacking_answer_mapping.agent.v1`을 사용한다.
+공격 실행 시 `--attack_ids`는 생략 가능하다. 생략하면 `--suite`(목표)의 해당 domain
+attack이 전부 자동 선택되며, 부분집합만 돌릴 때만 suite와 goal이 일치하는 ID를 명시한다.
+예를 들어 일부만 실행하려면 `--suite hijacking --attack_ids hijacking_answer_mapping.agent.v1`.
 `--experiment_config`의 기본값은 `configs/experiments/core.yaml`이며 이 파일이
 `model.yaml`·`judge.yaml`을 참조한다. CrewAI는 개별 model/Judge override를 거부한다.
 현재 설정은 G0 개발용으로 동결했으며 G5 최종 GPT-4o-mini 설정 동결과 구별한다.

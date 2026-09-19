@@ -63,7 +63,7 @@ python3 benchmark.py --mas sc [--suite disruption] [--task_domain math] [--malic
 
 ### 기본 명령행 옵션
 
-> 아래 실행 예시에서 `[]`로 감싼 옵션은 생략 가능(기본값 사용)하고, 감싸지 않은 옵션은 그 예시에서 필수다. crewai 공격 예시의 `--task_domain`은 `--attack_ids`의 domain과 일치해야 하므로 필수로 둔다.
+> 아래 실행 예시에서 `[]`로 감싼 옵션은 생략 가능(기본값 사용)하고, 감싸지 않은 옵션은 그 예시에서 필수다. crewai 공격 예시의 `--task_domain`은 domain 선택을 위해 필수로 둔다(`--attack_ids`를 지정하면 그 domain과 일치해야 한다).
 
 ```bash
 python3 benchmark.py \
@@ -99,7 +99,7 @@ python3 benchmark.py \
 | `--execute` | 플래그 · off | G7 | 전체 MAS | 실모델 호출을 허용한다. 생략 시 기본은 계획만 출력하는 **0-call dry-run**이다. |
 | `--limit` | 양의 정수 · 없음 | 2026-08-31 (CrewAI 통합) | 전체 MAS | 빠른 검증용으로 평가 태스크 수를 제한한다. 미지정 시 전체 태스크를 평가한다. `--task_ids`와 동시 사용 불가. |
 | `--task_ids` | manifest task ID 하나 이상 · 없음 | G7 | 전체 MAS | 실행할 정확한 task ID를 지정한다. `--limit`와 함께 쓸 수 없다. |
-| `--attack_ids` | manifest attack ID 하나 이상 · 없음 | G0 | crewai + G7 legacy | 실행할 대표 공격 ID를 명시한다. crewai 공격 suite면 **필수**이며 `<category>.<surface>.v1` 형식이다. G7 legacy에서는 생략 시 해당 목표의 attack이 자동 선택되고, 지정 시 그 목표 내 일부만 실행한다. |
+| `--attack_ids` | manifest attack ID 하나 이상 · 없음 | G0 | crewai + G7 legacy | 실행할 공격 ID. **생략 시 선택한 `--suite`(목표)의 해당 domain attack이 전부 자동 선택**되고, 지정 시 그 목표 내 부분집합만 실행한다(**crewai·legacy 동일**). `<category>.<surface>.v1` 형식이며 attack_id의 goal은 `--suite`와 일치해야 한다. |
 | `--experiment_id` | 디렉터리 안전 문자열 · 없음 | G0 | crewai + G7 legacy | 출력 `<output_dir>/<experiment_id>/{runs,messages}.jsonl` 의 실험 식별자. 미지정 시 `g7-cross-mas-v1`. |
 | `--experiment_config` | YAML 경로 · `configs/experiments/g5_v2.yaml` | G0 | crewai 전용 | 개발 계약(단일 출처). model/Judge 개별 override를 거부한다. |
 | `--phase` | `calibration`·`pilot`·`core`·`confirmation` · `core` | G0 | crewai + G7 legacy | 기록할 실행 단계(run_id 결정 요소). |
@@ -107,10 +107,10 @@ python3 benchmark.py \
 | `--resume` | 플래그 · off | G0 | crewai + G7 legacy | 완료된 run(정상 false 판정 포함)을 재사용해 건너뛴다. |
 | `--retry_errors` | 플래그 · off | G0 | crewai + G7 legacy | 기록된 일시적 provider/timeout 오류만 총 3시도까지 재시도한다. |
 
-> ⚠️ **`crewai_seq_nodeleg`의 `--suite` / `--attack_ids` 주의**
-> - `--suite` 기본값은 `hijacking`(공격 suite)이다. crewai에서 `--suite`를 생략하면 공격 suite로 잡히지만 `--attack_ids`가 없어 `Select unique --attack_ids explicitly for an attack suite` 오류가 난다.
-> - 따라서 crewai는 **정상이면 `--suite benign`**, **공격이면 `--suite <goal> --attack_ids <id>`** 를 명시해야 한다. attack_id의 goal이 suite와 다르면 `attack_id and suite disagree` 오류다. (예: Math hijacking → `--suite hijacking --attack_ids hijacking_answer_mapping.agent.v1`)
-> - 이는 recorded 경로 전용 계약이다. 다른 MAS(legacy)는 종전대로 `--suite`만으로 공격을 자동 선택하며 `--attack_ids`가 필요 없다.
+> ℹ️ **`crewai_seq_nodeleg`의 `--suite` / `--attack_ids`**
+> - `--suite` 기본값은 `hijacking`(공격 suite)이다. 정상 평가는 `--suite benign`으로 실행한다.
+> - `--attack_ids`는 **생략 가능**하다. 생략하면 선택한 `--suite`(목표)의 해당 domain attack이 **전부 자동 선택**된다(현재 benchmark.py의 G7 경로에서 crewai·legacy 모두 동일). 부분집합만 돌릴 때만 명시한다.
+> - `--attack_ids`를 지정하는 경우 그 goal이 `--suite`와 달라선 안 된다(`attack_id and suite disagree` 오류). 예: Math hijacking 일부만 실행 → `--suite hijacking --attack_ids hijacking_answer_mapping.agent.v1`.
 
 상세 CLI·출력·격리 계약은 [manifest·CLI 가이드](manifests/README.md#crewai-실행-cli-g0-개발-경로)를 따른다.
 
@@ -147,11 +147,11 @@ python benchmark.py --mas sc [--task_domain math] [--max_workers 1]
 # [] 내부 옵션은 생략 가능 옵션임. 실제 사용 시에는 [] 제거 후 사용 
 
 # 실행
-.aciarena/bin/python benchmark.py --mas crewai_seq_nodeleg --suite benign [--task_domain math] [--limit 1] [--experiment_id test1] [--output_dir logs]
+.aciarena/bin/python benchmark.py --mas crewai_seq_nodeleg --suite benign [--task_domain math] [--limit 1] [--experiment_id test1] [--output_dir outputs/g7]
 
 
-# 공격 실행 — --suite 와 일치하는 --attack_ids 를 함께 명시
-.aciarena/bin/python benchmark.py --mas crewai_seq_nodeleg --suite hijacking --task_domain math --attack_ids hijacking_answer_mapping.agent.v1 [--limit 1] [--experiment_id test1] [--output_dir logs]
+# 공격 실행 — --attack_ids는 생략 가능(생략 시 목표 전체 자동). 아래는 일부만 돌리는 예시
+.aciarena/bin/python benchmark.py --mas crewai_seq_nodeleg --suite hijacking --task_domain math [--attack_ids hijacking_answer_mapping.agent.v1] [--limit 1] [--experiment_id test1] [--output_dir outputs/g7]
 
 ```
 

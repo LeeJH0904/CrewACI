@@ -6,6 +6,13 @@
 - 기존 MAS 대상: `autogen`, `agentverse`, `camel`, `llm_debate`, `mad`, `metagpt`, `sc`
 - 현재 Gate: G2 완료, G3 공식/재구현 calibration 전
 
+> ⚠️ **이 문서는 G2 시점(2026-09-09)의 비대칭 스냅샷이며, G7에서 상당 부분이 해소되었다.**
+> 특히 "3. CLI와 평가 진입점 비대칭" 표는 pre-G7 상태다. G7 이후 `benchmark.py`는
+> legacy 6종도 recording 어댑터를 거쳐 `--experiment_id`·`--phase`·`--resume`·
+> `--retry_errors`·`--malicious_agents`를 동일하게 사용하고, **`--attack_ids`는 crewai·legacy
+> 모두 생략 시 `--suite` 목표의 attack을 자동 선택**한다("필수"였던 표 71행은 더 이상 유효하지 않음).
+> 현행 CLI 계약은 루트 [`README.md`](../README.md)를 따른다.
+
 이 문서는 현재 저장소에서 `crewai_seq_nodeleg`와 기존 ACIArena MAS가 서로 다른
 방식으로 선택·실행·검증·기록되는 지점을 코드 기준으로 정리한다. 여기서 CrewAI는
 공식 `crewai` 패키지 runtime이 아니라 ACIArena의 `BaseMAS` 위에 재구현한

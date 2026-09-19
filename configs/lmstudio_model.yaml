@@ -1,0 +1,9 @@
+# 프레임워크 검증(스모크)용 — LM Studio 로컬 서버. 최종 벤치(gpt-4o-mini)와 무관.
+# 사용: benchmark.py ... --model_config configs/lmstudio_model.yaml
+provider: openai                        # LM Studio는 OpenAI 호환 API
+base_url: http://127.0.0.1:1234/v1      # LM Studio 서버 주소·포트(로드된 값으로 확인)
+model_name: qwen2.5-0.5b-instruct       # ← LM Studio에 로드한 모델 ID로 교체
+temperature: 0.0
+max_tokens: 1024
+seed: 42
+api_key: lm-studio                      # 더미값(로컬이라 무시됨). 실키 노출 방지용

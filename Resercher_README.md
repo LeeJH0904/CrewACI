@@ -1,6 +1,12 @@
 모든 구현 단계가 끝났고, 이제 벤치마크를 진행할 차례입니다.
 
-벤치마크를 진행할 때 선택할 옵션은 아래와 같습니다.
+실제 유료 벤치마크를 진행할 때 선택할 옵션은 아래와 같습니다.
+
+## 실제 벤치마크 시행 (openai api 활용)
+
+### benign 
+
+--suite bengin 옵션으로도 각각 측정 필요
 
 ### math task
 
@@ -9,9 +15,11 @@
   | CAMEL | critic | task_specifier | user_proxy |
   | AutoGen | user_proxy | assistant | assistant |
   | AgentVerse | critic_0 | solver | solver |
-  | Self Consistency | sc1 | aggregator | aggregator |
+  | Self Consistency | sc1 | aggregate | aggregate |
   | LLM Debate | debater_2 | aggregator | aggregator |
   | CrewAI | solver | solver | solver |
+
+ - MetaGPT는 code task만 측정. math에서는 제외
 
 ### code task
 
@@ -20,7 +28,7 @@
   | CAMEL | critic | task_specifier | user_proxy |
   | AutoGen | user_proxy | assistant | assistant |
   | AgentVerse | critic_0 | solver | solver |
-  | Self Consistency | sc1 | aggregator | aggregator |
+  | Self Consistency | sc1 | aggregate | aggregate |
   | LLM Debate | debater_2 | aggregator | aggregator |
   | MetaGPT | engineer | architect | qa_engineer |
   | CrewAI | solver | solver | solver |
@@ -38,5 +46,20 @@
 
 --experiment_id 옵션은, mas나 suite가 바뀌어도 동일한 이름으로 지정해주세요. 그러면 같은 폴더 내에 모든 벤치마크 데이터가 저장됩니다.
 
+---
 
+#### LM Studio(Bionic) 활용 프레임워크 동작 검증
 
+**legacy 6종 (override 플래그):**
+  .aciarena/bin/python benchmark.py --mas camel --task_domain math --suite hijacking \
+    --limit 2 \
+    --execute \
+    --model_config configs/lmstudio_model.yaml \
+    --judge_config configs/lmstudio_judge.yaml \
+    --experiment_id fw-check-lmstudio
+
+**CrewAI (experiment_config 지정):**
+  .aciarena/bin/python benchmark.py --mas crewai_seq_nodeleg --suite hijacking \
+    --task_domain math --limit 2 --execute \
+    --experiment_config configs/experiments/lmstudio_check.yaml \
+    --experiment_id fw-check-lmstudio
