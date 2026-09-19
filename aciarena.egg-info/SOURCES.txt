@@ -30,7 +30,13 @@ aciarena/evaluation/audit.py
 aciarena/evaluation/code_verifier_worker.py
 aciarena/evaluation/configuration.py
 aciarena/evaluation/evaluation_suite.py
+aciarena/evaluation/g7_aggregation.py
+aciarena/evaluation/g7_audit.py
+aciarena/evaluation/g7_manifest.py
+aciarena/evaluation/g7_reporting.py
+aciarena/evaluation/g7_suite.py
 aciarena/evaluation/human_eval_execution.py
+aciarena/evaluation/legacy_recording.py
 aciarena/evaluation/math_verifier_worker.py
 aciarena/evaluation/normalizers.py
 aciarena/evaluation/pilot.py

@@ -1,0 +1,38 @@
+{
+  "manifest_version": "g7-identifiers-v1",
+  "task_mapping": {
+    "source_manifest": "manifests/g5-v2/tasks.json",
+    "key_fields": ["task_domain", "source", "source_index", "task_hash", "ground_truth_hash"],
+    "rule": "The dataset row at source_index must hash to task_hash and its answer must hash to ground_truth_hash; the matching manifest task_id is used.",
+    "expected_counts": {"math": 39, "code": 30}
+  },
+  "attack_mapping": {
+    "source_manifest": "manifests/g5-v2/attacks.json",
+    "key_field": "class",
+    "expected_unique_classes": 22,
+    "classes": [
+      {"class": "aciarena.attacks.disclosure_attack.ApikeyMessage", "attack_id": "disclosure_generic_apikey.message.v1"},
+      {"class": "aciarena.attacks.disclosure_attack.MathLocationLeakAgent", "attack_id": "disclosure_math_location.agent.v1"},
+      {"class": "aciarena.attacks.disclosure_attack.MathLocationLeakInstruction", "attack_id": "disclosure_math_location.instruction.v1"},
+      {"class": "aciarena.attacks.disclosure_attack.MathNameLeakAgent", "attack_id": "disclosure_math_name.agent.v1"},
+      {"class": "aciarena.attacks.disclosure_attack.MathNameLeakInstruction", "attack_id": "disclosure_math_name.instruction.v1"},
+      {"class": "aciarena.attacks.disclosure_attack.CodeNameLeakAgent", "attack_id": "disclosure_code_name.agent.v1"},
+      {"class": "aciarena.attacks.disclosure_attack.CodeNameLeakInstruction", "attack_id": "disclosure_code_name.instruction.v1"},
+      {"class": "aciarena.attacks.disclosure_attack.CodeApikeyLeakAgent", "attack_id": "disclosure_code_apikey.agent.v1"},
+      {"class": "aciarena.attacks.disclosure_attack.CodeApikeyLeakInstruction", "attack_id": "disclosure_code_apikey.instruction.v1"},
+      {"class": "aciarena.attacks.disruption_attack.DDOSAgent", "attack_id": "disruption_ddos.agent.v1"},
+      {"class": "aciarena.attacks.disruption_attack.DDOSMessage", "attack_id": "disruption_ddos.message.v1"},
+      {"class": "aciarena.attacks.disruption_attack.DDOSInstruction", "attack_id": "disruption_ddos.instruction.v1"},
+      {"class": "aciarena.attacks.disruption_attack.MisalignAgent", "attack_id": "disruption_misalign.agent.v1"},
+      {"class": "aciarena.attacks.disruption_attack.CodeDisruptionAttack", "attack_id": "disruption_code_data_collection.agent.v1"},
+      {"class": "aciarena.attacks.disruption_attack.MathDisruptionAttack", "attack_id": "disruption_math_data_collection.agent.v1"},
+      {"class": "aciarena.attacks.hijacking_attack.SafetyCheckAgent", "attack_id": "hijacking_safety_check.agent.v1"},
+      {"class": "aciarena.attacks.hijacking_attack.SafetyCheckInstruction", "attack_id": "hijacking_safety_check.instruction.v1"},
+      {"class": "aciarena.attacks.hijacking_attack.MaliciousReportAgent", "attack_id": "hijacking_malicious_report.agent.v1"},
+      {"class": "aciarena.attacks.hijacking_attack.MaliciousReportInstruction", "attack_id": "hijacking_malicious_report.instruction.v1"},
+      {"class": "aciarena.attacks.hijacking_attack.AnswerMappingAgent", "attack_id": "hijacking_answer_mapping.agent.v1"},
+      {"class": "aciarena.attacks.hijacking_attack.AnswerMappingInsruction", "attack_id": "hijacking_answer_mapping.instruction.v1"},
+      {"class": "aciarena.attacks.hijacking_attack.MathInvertMessage", "attack_id": "hijacking_math_invert.message.v2"}
+    ]
+  }
+}

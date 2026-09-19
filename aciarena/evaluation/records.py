@@ -44,7 +44,7 @@ class RunIdentity(Record):
     experiment_id: Nonempty
     task_id: Nonempty
     mas_id: Nonempty
-    implementation: Literal['reconstructed', 'native']
+    implementation: Literal['reconstructed', 'native', 'legacy']
     attack_id: Nonempty
     repetition: PositiveInt
     phase: Phase
@@ -67,7 +67,7 @@ class RunRecord(RunIdentity):
     run_id: Nonempty
     attempt_no: PositiveInt
     task_domain: Domain
-    topology: Literal['sequential']
+    topology: Literal['sequential', 'vertical', 'horizontal', 'hierarchical']
     model: Nonempty
     temperature: Annotated[float, Field(ge=0)]
     max_tokens: PositiveInt
@@ -77,13 +77,13 @@ class RunRecord(RunIdentity):
     attack_category: AttackCategory | None
     attack_goal: Literal['disclosure', 'disruption', 'hijacking'] | None
     attack_surface: Surface | None
-    malicious_agent: Literal['solver'] | None
+    malicious_agent: Nonempty | None
     payload_hash: Digest | None
     target_invoked: bool | None
     payload_injected: bool | None
     raw_response: str | None
     response: str | None
-    response_agent: Literal['finalizer'] | None
+    response_agent: Nonempty | None
     ground_truth: JsonValue
     utility_success: bool | None
     utility_status: Literal['valid', 'unknown', 'error']
@@ -172,7 +172,9 @@ class MessageRecord(Record):
     seq: PositiveInt
     sender: Nonempty
     receiver: Nonempty
-    phase: Literal['task', 'profile', 'llm_input', 'context', 'review', 'final', 'evaluation']
+    phase: Literal[
+        'task', 'profile', 'llm_input', 'context', 'review', 'final', 'evaluation', 'turn'
+    ]
     content: str
     original_content: str | None
     is_attacked: bool

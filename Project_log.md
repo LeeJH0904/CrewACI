@@ -1,3 +1,35 @@
+## 2026-09-19 — G7 1~6단계 오프라인 구현·acceptance 완료
+
+- **스키마·동결 안전:** `RunRecord`에 legacy 구현·4 topology·임의 역할명을, `MessageRecord`에
+  `turn`을 상위집합으로 추가하면서 schema v1.0을 유지했다. G6 전용 read-only frozen
+  verifier를 추가해 artifact/source/input 16개 hash, 1,056행 exact audit, 동결 report hash
+  `1db3b6…7814`와 BU 47/69·UA 562/925·ASR 93/919를 재확인했다. D62에 따른
+  `records.py` snapshot hash 차이만 허용하며 다른 drift는 거부한다.
+- **G7 manifest:** 논문 6종+CrewAI(MAD 제외), MetaGPT code-only, 나머지 both, topology·agent·
+  final source를 `systems.json`에 고정했다. Appendix I Table 5 기반 목표별 단일 target과
+  MetaGPT script 관례를 `targets.json`에, 69 task content→ID와 22 attack class→ID의
+  결정적 매핑을 `identifiers.json`에 기록했다. 전체 G7 core 계획은 6,426행이다.
+- **legacy recording adapter:** 실제 legacy MAS·task/attack verifier를 재사용하면서 run별
+  Agent/Judge 호출·token, raw/normalized 출력, final source, 세 공격 표면의 target/payload
+  증거, config/source/manifest/dependency hash, 오류 row와 partial trace를 공통 JSONL 계약으로
+  저장한다. valid false resume, 일시 오류 최대 3회 retry, frozen not-applicable, terminal audit,
+  storage fail-stop을 연결했다. 고정 target이 런타임에서 호출되지 않는 경우는 D54대로
+  `target_invoked=false`를 보존해 headline 0으로 처리하며 slice 전체를 폐기하지 않는다.
+- **실행 진입점:** 기존 `benchmark.py`를 G7 per-invocation 진입점으로 확장했다. 기본은 파일도
+  만들지 않는 0-call dry-run이고 `--execute`에서만 실행한다. CrewAI는 G5-v2 동결 task/attack
+  inventory를 G7 experiment/output 경로에서 사용하며 legacy 6종은 공통 adapter로 간다.
+  G5-v2/G6 동결 경로 아래 쓰기와 unsafe experiment ID를 명시적으로 거부한다.
+- **집계·보고:** `g7-cross-mas-aggregation-v1`과 `g7-cross-mas-report-v1`을 추가했다.
+  모든 7개 시스템에 논문식 headline(오류·빈 출력·NA·미호출·미주입=0)과 G6 valid-only
+  진단을 함께 적용하고, domain별 UA/ASR·시스템별 task-cluster CI를 출력한다. paired 검정·
+  순위표는 만들지 않는다. JSON/Markdown/CSV/artifact manifest는 `g7-…` 이름으로만 쓰며
+  read-only 분석은 lock/directory를 생성하지 않는다.
+- **acceptance:** unit 120개 통과. integration 46개 중 제한 sandbox에서 HumanEval
+  multiprocessing socket 3건만 환경 오류였고, 해당 기존 G0 모듈 9개를 권한 확장 재실행해
+  전부 통과했다. 실제 legacy MAS 6종과 CrewAI recorded 경로, 실제 CAMEL의 세 표면을 모두
+  offline mock LLM으로 검증했다. 외부·유료 API 호출은 0회이며 `outputs/g7/` 실험 산출물은
+  생성하지 않았다. G7 7~8단계의 실모델 파일럿·전체 수집은 사용자 per-invocation 실행으로 남긴다.
+
 ## 2026-09-16 — G6 감사·공통 집계·artifact 동결 완료
 
 - **통합 오케스트레이터(D48):** `scripts/run_experiment.py`를 추가했다. config/stage/

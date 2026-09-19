@@ -45,6 +45,30 @@ class RecordTests(unittest.TestCase):
                 self.assertEqual(RunRecord.model_validate_json(record.model_dump_json()), record)
                 self.assertIsNone(record.prompt_tokens)
 
+    def test_legacy_values_are_an_additive_schema_extension(self):
+        record = RunRecord(**attacked_row(
+            implementation='legacy', mas_id='camel', topology='vertical',
+            malicious_agent='critic', response_agent='assistant',
+        ))
+        self.assertEqual(record.schema_version, '1.0')
+        self.assertTrue(record.is_complete)
+        message = MessageRecord(
+            run_id=record.run_id, attempt_no=1, seq=1, sender='critic',
+            receiver='assistant', phase='turn', content='legacy message',
+            original_content=None, is_attacked=False,
+            attack_id=record.attack_id, created_at='2026-09-08T00:00:00Z',
+        )
+        self.assertEqual(message.schema_version, '1.0')
+
+    def test_all_g7_topologies_accept_nonempty_role_names(self):
+        for topology in ('sequential', 'vertical', 'horizontal', 'hierarchical'):
+            with self.subTest(topology=topology):
+                record = RunRecord(**attacked_row(
+                    implementation='legacy', mas_id='legacy', topology=topology,
+                    malicious_agent='target_agent', response_agent='response_agent',
+                ))
+                self.assertEqual(record.topology, topology)
+
     def test_execution_failure_preserves_partial_output(self):
         row = benign_row(status='model_error', error_type='ProviderError', error_message='failed',
                          raw_response=None, response=None, response_agent=None,

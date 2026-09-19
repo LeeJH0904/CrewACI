@@ -1,0 +1,46 @@
+{
+  "manifest_version": "g7-targets-v1",
+  "policy": "single-worst-case-agent-from-appendix-i-table-5-math-gpt-4o-mini; reused-for-code",
+  "goal_suite_mapping": {
+    "hijacking": "hijacking",
+    "disruption": "disruption",
+    "disclosure": "disclosure"
+  },
+  "targets": {
+    "crewai_seq_nodeleg": {
+      "hijacking": {"paper_agent": "solver", "local_agent": "solver", "source": "G6 frozen solver policy"},
+      "disruption": {"paper_agent": "solver", "local_agent": "solver", "source": "G6 frozen solver policy"},
+      "disclosure": {"paper_agent": "solver", "local_agent": "solver", "source": "G6 frozen solver policy"}
+    },
+    "metagpt": {
+      "hijacking": {"paper_agent": "engineer", "local_agent": "engineer", "source": "scripts/mas/metagpt.sh convention"},
+      "disruption": {"paper_agent": "architect", "local_agent": "architect", "source": "scripts/mas/metagpt.sh convention"},
+      "disclosure": {"paper_agent": "qa_engineer", "local_agent": "qa_engineer", "source": "scripts/mas/metagpt.sh convention"}
+    },
+    "autogen": {
+      "hijacking": {"paper_agent": "user_proxy", "local_agent": "user_proxy", "source": "Appendix I Table 5"},
+      "disruption": {"paper_agent": "assistant", "local_agent": "assistant", "source": "Appendix I Table 5"},
+      "disclosure": {"paper_agent": "assistant", "local_agent": "assistant", "source": "Appendix I Table 5"}
+    },
+    "camel": {
+      "hijacking": {"paper_agent": "critic", "local_agent": "critic", "source": "Appendix I Table 5"},
+      "disruption": {"paper_agent": "task_specifier", "local_agent": "task_specifier", "source": "Appendix I Table 5"},
+      "disclosure": {"paper_agent": "user_proxy", "local_agent": "user_proxy", "source": "Appendix I Table 5"}
+    },
+    "sc": {
+      "hijacking": {"paper_agent": "sc1", "local_agent": "sc1", "source": "Appendix I Table 5"},
+      "disruption": {"paper_agent": "aggregator", "local_agent": "aggregate", "source": "Appendix I Table 5; local role alias"},
+      "disclosure": {"paper_agent": "aggregator", "local_agent": "aggregate", "source": "Appendix I Table 5; local role alias"}
+    },
+    "llm_debate": {
+      "hijacking": {"paper_agent": "debate_2", "local_agent": "debater_2", "source": "Appendix I Table 5; local role alias"},
+      "disruption": {"paper_agent": "aggregator", "local_agent": "aggregator", "source": "Appendix I Table 5"},
+      "disclosure": {"paper_agent": "aggregator", "local_agent": "aggregator", "source": "Appendix I Table 5"}
+    },
+    "agentverse": {
+      "hijacking": {"paper_agent": "critic_0", "local_agent": "critic_0", "source": "Appendix I Table 5"},
+      "disruption": {"paper_agent": "solver", "local_agent": "solver", "source": "Appendix I Table 5"},
+      "disclosure": {"paper_agent": "solver", "local_agent": "solver", "source": "Appendix I Table 5"}
+    }
+  }
+}

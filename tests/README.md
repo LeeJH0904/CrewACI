@@ -8,6 +8,34 @@ working tree에서 G0~G4의 과거 config snapshot/report를 in-place 재감사�
 `a1d662eddbf8acfc1d319686f24fd94fff3e2806`(`a1d662e`)을 별도 checkout/worktree에서
 사용한다. 현재 코드로 과거 report를 덮어써서 검사를 통과시키지 않는다.
 
+## G7 1~6단계 오프라인 acceptance (2026-09-19)
+
+논문 6종+CrewAI의 system/domain/target manifest, 69 task·22 attack 식별 매핑,
+legacy 공통 JSONL recording adapter, `benchmark.py` dry-run/execute 배선,
+paper-headline+valid-only 2레이어 집계·G7 report를 검증한다. 테스트는 실제 legacy MAS
+객체를 사용하고 LLM/Judge 경계만 deterministic mock으로 바꾼다.
+
+```bash
+.aciarena/bin/python -m unittest discover -s tests/unit -v
+.aciarena/bin/python -m unittest discover -s tests/integration -v
+.aciarena/bin/python scripts/verify_g6_frozen.py
+.aciarena/bin/python scripts/aggregate_g7.py
+```
+
+- 실제 legacy MAS 6종과 CrewAI recorded 경로의 최소 정상 run.
+- MetaGPT code-only·나머지 both, 22 class→ID, 목표별 단일 target.
+- instruction/agent/message 직접 증거, final source, Disruption Judge 원시 I/O.
+- 빈 출력·model/timeout/protocol/Judge/storage 오류, valid false resume, 허용 retry,
+  gap/config/source drift audit와 동결 not-applicable.
+- 모든 7개 시스템에 동일 headline/diagnostic 정책과 exact 6,426-condition inventory.
+- 기본 dry-run은 모델 호출·output 생성 0이며 불완전 matrix report 쓰기는 명시적
+  `--allow-partial-write` 없이는 거부한다.
+- G6 frozen verifier는 16개 hash, 1,056행, 동결 report hash·지표를 read-only로 재검증한다.
+
+unit **120개**가 통과했다. integration 46개 중 기본 sandbox에서 기존 HumanEval
+multiprocessing socket 3개만 환경 오류였고, 해당 G0 모듈 9개를 권한 확장 환경에서
+재실행해 모두 통과했다. G7 테스트와 frozen/집계 검증의 외부·유료 API 호출은 0회다.
+
 ## G6 감사·집계·동결 회귀 (2026-09-16)
 
 G5-v2 원본 1,056행을 외부 API 호출 없이 다시 감사·집계해
@@ -342,5 +370,5 @@ lockfile은 아니다.
 
 ## 다음 작업
 
-G0~G2는 완료됐다. 다음은 G3 공식 CrewAI↔재구현 Sequential 20-run calibration과
-기능별 차이 보고다. 전체 본 실험 결과 감사·재계산은 G6에서 다시 수행한다.
+G0~G6과 G7 오프라인 구현 1~6단계는 완료됐다. 다음은 사용자가 per-invocation으로
+수행하는 G7 7단계 실모델 파일럿과 8단계 전체 수집·최종 동결이다.

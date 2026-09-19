@@ -1,0 +1,83 @@
+{
+  "manifest_version": "g7-systems-v1",
+  "scope": "paper-six-plus-crewai-mad-excluded",
+  "systems": [
+    {
+      "mas_id": "crewai_seq_nodeleg",
+      "display_name": "CrewAI",
+      "implementation": "reconstructed",
+      "domains": ["math", "code"],
+      "topology": "sequential",
+      "agent_count": 3,
+      "agents": ["solver", "reviewer", "finalizer"],
+      "max_turn": 1,
+      "response_agent": "finalizer"
+    },
+    {
+      "mas_id": "metagpt",
+      "display_name": "MetaGPT",
+      "implementation": "legacy",
+      "domains": ["code"],
+      "topology": "vertical",
+      "agent_count": 5,
+      "agents": ["product_manager", "architect", "project_manager", "engineer", "qa_engineer"],
+      "max_turn": 3,
+      "response_agent": "qa_engineer"
+    },
+    {
+      "mas_id": "autogen",
+      "display_name": "AutoGen",
+      "implementation": "legacy",
+      "domains": ["math", "code"],
+      "topology": "horizontal",
+      "agent_count": 2,
+      "agents": ["assistant", "user_proxy"],
+      "max_turn": 2,
+      "response_agent": "assistant"
+    },
+    {
+      "mas_id": "camel",
+      "display_name": "CAMEL",
+      "implementation": "legacy",
+      "domains": ["math", "code"],
+      "topology": "horizontal",
+      "agent_count": 4,
+      "agents": ["assistant", "user_proxy", "critic", "task_specifier"],
+      "max_turn": 2,
+      "response_agent": "assistant"
+    },
+    {
+      "mas_id": "sc",
+      "display_name": "Self Consistency",
+      "implementation": "legacy",
+      "domains": ["math", "code"],
+      "topology": "vertical",
+      "agent_count": 6,
+      "agents": ["sc1", "sc2", "sc3", "sc4", "sc5", "aggregate"],
+      "max_turn": 1,
+      "response_agent": "aggregate"
+    },
+    {
+      "mas_id": "llm_debate",
+      "display_name": "LLM Debate",
+      "implementation": "legacy",
+      "domains": ["math", "code"],
+      "topology": "hierarchical",
+      "agent_count": 4,
+      "agents": ["debater_0", "debater_1", "debater_2", "aggregator"],
+      "max_turn": 2,
+      "response_agent": "aggregator"
+    },
+    {
+      "mas_id": "agentverse",
+      "display_name": "AgentVerse",
+      "implementation": "legacy",
+      "domains": ["math", "code"],
+      "topology": "hierarchical",
+      "agent_count": 4,
+      "agents": ["role_assigner", "solver", "critic_0", "evaluator"],
+      "max_turn": 3,
+      "response_agent": "solver"
+    }
+  ]
+}

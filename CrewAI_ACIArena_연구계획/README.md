@@ -1,6 +1,6 @@
 # CrewAI × ACIArena 연구·구현 문서
 
-갱신일: 2026-09-16
+갱신일: 2026-09-19
 
 **G5~G7의 활성 구성은 Sequential 하나로 확정한다.** Hierarchical/GH는
 G7 완료 후 자원·일정 여유가 있을 때만 별도 승인으로 재검토하며,
@@ -77,7 +77,13 @@ G7 완료 후 자원·일정 여유가 있을 때만 별도 승인으로 재검�
   UA 562/925=60.8%, ASR 93/919=10.1%이며 target/payload 987/987, 재시도·실행 오류·
   평가 error·누락·중복 0이다. JSON/Markdown/CSV와 hash manifest를
   `outputs/g6/crewai-g5-final-v2/`에 동결해 **CrewAI 독립 벤치를 완료**했다.
-  다음 단계는 별도 파일럿·예산 승인이 필요한 G7 cross-MAS 비교다(D55).
+  다음 단계는 G7 cross-MAS 비교다(D55).
+- 2026-09-19 G7의 오프라인 구현 1~6단계를 완료했다. 논문 6종+CrewAI manifest와
+  목표별 target, task/attack 식별 매핑, legacy 공통 JSONL recording adapter,
+  `benchmark.py` dry-run/실행 배선, headline+valid-only 2레이어 G7 집계·보고를 구현했다.
+  실제 legacy MAS 6종과 CrewAI 경로의 mock acceptance, 세 공격 표면, 오류·resume·retry·audit,
+  0-call dry-run을 통과했고 G6 frozen hash/1,056행/동결 수치를 재검증했다. 외부·유료 호출은
+  0회다. 남은 G7 7~8단계(실모델 파일럿·전체 수집)는 사용자가 per-invocation으로 수행한다.
 - ACIArena_관련_문서/ 폴더 내부에 '연구개발 사업 선청서'와 'ACIArena_CrewAI_통합_정리' 문서가 저장되어있다.
     'ACIArena_CrewAI_통합_정리.md'의 경우, 초반의 통합 구상안을 담고있으며, 현재 진행 과정도 해당 문서를 중심으로 한다.
     다만 초기 작성된 문서이므로, 'ACIArena_CrewAI_통합_정리.md' 문서와 'archive/' 폴더 내부 문서 및 '00_구현_가이드.md' 문서 내용상의 불일치가 있다면, 'archive/' 폴더 내부 문서 및 '00_구현_가이드.md' 문서 내용을 우선한다.
