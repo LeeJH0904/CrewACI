@@ -26,3 +26,5 @@ __pycache__/
 /outputs/g5-v2/provider_preflight.json
 
 /outputs/g7/**
+
+/benchmark.sh
