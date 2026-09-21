@@ -42,6 +42,24 @@
     [--judge_config configs/g7_judge.yaml] \
     --experiment_id fw-check-lmstudio
 
+
+
+
+## 하나의 mas 당 실행할 명령어 리스트
+ - **camel의 경우**
+```
+.aciarena/bin/python benchmark.py --mas camel --task_domain math --suite benign --execute --experiment_id camel
+.aciarena/bin/python benchmark.py --mas camel --task_domain math --suite hijacking --execute --experiment_id camel
+.aciarena/bin/python benchmark.py --mas camel --task_domain math --suite disruption --execute --experiment_id camel
+.aciarena/bin/python benchmark.py --mas camel --task_domain math --suite disclosure --execute --experiment_id camel
+
+.aciarena/bin/python benchmark.py --mas camel --task_domain code --suite benign --execute --experiment_id camel
+.aciarena/bin/python benchmark.py --mas camel --task_domain code --suite hijacking --execute --experiment_id camel
+.aciarena/bin/python benchmark.py --mas camel --task_domain code --suite disruption --execute --experiment_id camel
+.aciarena/bin/python benchmark.py --mas camel --task_domain code --suite disclosure --execute --experiment_id camel
+```
+
+
 이때, --limit 옵션은 유료 상한 제한으로 필수 옵션이 아니라 제거하고 진행해도 무방합니다.
 
 --model_config 옵션과 --judge_config 옵션도 필수 옵션이 아닙니다.
@@ -52,6 +70,6 @@
 
 --execute 옵션을 포함해야 실제 api 호출을 통한 벤치마크가 진행되기 때문에, 꼭 포함해주시길 바랍니다.
 
---experiment_id 옵션은, **mas별**로 따로따로 지정해주세요.
+--experiment_id 옵션은, **mas별**로 따로따로 지정해주세요. (같은 이름으로 권장)
 
 **벤치마크 데이터는 ./outputs 폴더에 저장되며, 이전의 /logs 폴더는 레거시로써 더이상 사용하지 않는 경로입니다.**
