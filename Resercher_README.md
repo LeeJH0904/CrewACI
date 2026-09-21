@@ -38,7 +38,7 @@
 
   ### 벤치마크 실행 명령어
   
-  .aciarena/bin/python benchmark.py --mas camel --task_domain math --suite hijacking \
+  .aciarena/bin/python benchmark.py --mas crewai_seq_nodeleg --task_domain math --suite hijacking \
     [--limit 2] \
     --execute \
     [--model_config configs/g7_model.yaml] \
