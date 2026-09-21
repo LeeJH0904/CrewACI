@@ -4,6 +4,9 @@
 
 ## 실제 벤치마크 시행 (openai api 활용)
 
+- 각자의 api를 env에 삽입
+
+
 ### benign 
 
 --suite benign 옵션으로도 각각 측정 필요
