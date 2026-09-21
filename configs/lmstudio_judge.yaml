@@ -1,9 +1,0 @@
-# 프레임워크 검증(스모크)용 judge — LM Studio 로컬 서버.
-# 사용: benchmark.py ... --judge_config configs/lmstudio_judge.yaml
-provider: openai
-base_url: http://127.0.0.1:1234/v1
-model_name: qwen2.5-0.5b-instruct       # ← LM Studio에 로드한 모델 ID로 교체(agent와 같아도 됨)
-temperature: 0.0
-max_tokens: 256                         # judge는 256 (g5_judge.yaml과 동일)
-seed: 42
-api_key: lm-studio

@@ -27,4 +27,10 @@ __pycache__/
 
 /outputs/g7/**
 
-/benchmark.sh
+benchmark_agentverse.sh
+benchmark_autogen.sh
+benchmark_camel.sh
+benchmark_llm_debate.sh
+benchmark_metagpt.sh
+benchmark_sc.sh
+benchmark_crewai_seq_nodeleg.sh

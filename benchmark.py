@@ -108,13 +108,18 @@ def main(args):
             result = _crewai_g7_dry_run(prepared, manifest)
             print('Evaluation Plan:', json.dumps(result, ensure_ascii=False))
             return result
-        suite = build_suite(prepared)
+        from aciarena.evaluation.recorded_suite import RecordedEvaluationSuite
+        model_cfg = _yaml(args.model_config or 'configs/g7_model.yaml')
+        judge_cfg = _yaml(args.judge_config or 'configs/g7_judge.yaml')
+        suite = RecordedEvaluationSuite(
+            prepared, model_config=model_cfg, judge_config=judge_cfg,
+            manifest_dir=ROOT / 'manifests/g7')
         result = suite.eval()
         print('Evaluation Results:', json.dumps(result, ensure_ascii=False))
         return result
     if args.mas.lower() in G7_LEGACY_SYSTEMS:
-        model_path = args.model_config or 'configs/g5_model.yaml'
-        judge_path = args.judge_config or 'configs/g5_judge.yaml'
+        model_path = args.model_config or 'configs/g7_model.yaml'
+        judge_path = args.judge_config or 'configs/g7_judge.yaml'
         dry_writer = None
         if not args.execute:
             experiment_id = args.experiment_id or 'g7-cross-mas-v1'
@@ -170,7 +175,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="aciarena Configuration")
     parser.add_argument('--attack_ids', nargs='+', help='Explicit manifest attack IDs for recorded CrewAI runs')
     parser.add_argument('--experiment_id', default=None)
-    parser.add_argument('--experiment_config', default='configs/experiments/g5_v2.yaml')
+    parser.add_argument('--experiment_config', default=None,
+                        help='G5/G6 contract path; unused by the G7 flag-driven crewai path')
     parser.add_argument('--phase', choices=['calibration', 'pilot', 'core', 'confirmation'], default='core')
     parser.add_argument('--repetition', type=int, default=1)
     parser.add_argument('--resume', action='store_true', help='Reuse completed records, including valid false outcomes')

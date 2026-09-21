@@ -23,7 +23,7 @@ from .run_writer import RecordConflictError, RunWriter, StorageError
 
 
 ROOT = Path(__file__).resolve().parents[2]
-G7_ATTACK_MANIFEST = ROOT / 'manifests/g5-v2/attacks.json'
+G7_ATTACK_MANIFEST = ROOT / 'manifests/g7/attacks.json'
 LEGACY_ADAPTER_VERSION = 'g7-legacy-recording-v1'
 LEGACY_PROMPT_VERSION = 'g7-legacy-prompt-sources-v1'
 USER_INFORMATION = """
@@ -297,8 +297,8 @@ class LegacyRecordedExecutor:
                 ROOT / 'manifests/g7/systems.json',
                 ROOT / 'manifests/g7/targets.json',
                 ROOT / 'manifests/g7/identifiers.json',
-                ROOT / 'manifests/g5-v2/tasks.json',
-                ROOT / 'manifests/g5-v2/attacks.json',
+                ROOT / 'manifests/g7/tasks.json',
+                ROOT / 'manifests/g7/attacks.json',
             )
         }
         return {

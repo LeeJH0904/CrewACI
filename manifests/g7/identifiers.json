@@ -1,13 +1,13 @@
 {
   "manifest_version": "g7-identifiers-v1",
   "task_mapping": {
-    "source_manifest": "manifests/g5-v2/tasks.json",
+    "source_manifest": "manifests/g7/tasks.json",
     "key_fields": ["task_domain", "source", "source_index", "task_hash", "ground_truth_hash"],
     "rule": "The dataset row at source_index must hash to task_hash and its answer must hash to ground_truth_hash; the matching manifest task_id is used.",
     "expected_counts": {"math": 39, "code": 30}
   },
   "attack_mapping": {
-    "source_manifest": "manifests/g5-v2/attacks.json",
+    "source_manifest": "manifests/g7/attacks.json",
     "key_field": "class",
     "expected_unique_classes": 22,
     "classes": [

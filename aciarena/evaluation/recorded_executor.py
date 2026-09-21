@@ -135,7 +135,7 @@ def verify_code(task):
 def load_task_manifest(path=None):
     path = Path(path) if path is not None else ROOT / 'manifests/tasks.json'
     manifest = json.loads(path.read_text())
-    if manifest.get('manifest_version') not in {'g0-v1', 'g5-v1', 'g5-v2'}:
+    if manifest.get('manifest_version') not in {'g0-v1', 'g5-v1', 'g5-v2', 'g7'}:
         raise ValueError('Unsupported task manifest version')
     sources, tasks = {}, {}
     for dataset in manifest['datasets']:

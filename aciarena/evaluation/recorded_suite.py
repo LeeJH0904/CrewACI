@@ -19,11 +19,13 @@ from .task import MathTask, CodeTask
 
 class RecordedEvaluationSuite:
     def __init__(self, args, *, model_config=None, judge_config=None,
+                 manifest_dir=None,
                  utility_verifier=None, utility_verifier_version=None):
         self.args = copy.deepcopy(args)
         if (model_config is None) != (judge_config is None):
             raise ConfigurationError('Inject model and Judge configurations together')
         if model_config is None:
+            # G5/G6 contract path: model/Judge/manifest come from --experiment_config.
             if getattr(args, 'model_config', None) or getattr(args, 'judge_config', None):
                 raise ConfigurationError('CrewAI reads model and Judge references from --experiment_config')
             config_path = getattr(args, 'experiment_config', 'configs/experiments/core.yaml')
@@ -31,6 +33,11 @@ class RecordedEvaluationSuite:
             manifest_directory = experiment_manifest_directory(config_path, contract)
             catalog = AttackCatalog(manifest_directory / 'attacks.json')
             task_manifest_path = manifest_directory / 'tasks.json'
+        elif manifest_dir is not None:
+            # G7 direct path: model/Judge injected by flags, manifest fixed to manifest_dir.
+            contract = {'contract_id': 'g7-direct-api'}
+            catalog = AttackCatalog(Path(manifest_dir) / 'attacks.json')
+            task_manifest_path = Path(manifest_dir) / 'tasks.json'
         else:
             contract = {'contract_id': 'injected-test-only'}
             catalog = None

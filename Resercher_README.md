@@ -35,33 +35,23 @@
 
   ### 벤치마크 실행 명령어
   
-  .aciarena/bin/python benchmark.py --mas camel --task_domain math --suite hijacking --limit 2 --execute --experiment_id g7-realbench
+  .aciarena/bin/python benchmark.py --mas camel --task_domain math --suite hijacking \
+    [--limit 2] \
+    --execute \
+    [--model_config configs/g7_model.yaml] \
+    [--judge_config configs/g7_judge.yaml] \
+    --experiment_id fw-check-lmstudio
 
 이때, --limit 옵션은 유료 상한 제한으로 필수 옵션이 아니라 제거하고 진행해도 무방합니다.
+
+--model_config 옵션과 --judge_config 옵션도 필수 옵션이 아닙니다.
+기본적으로 configs/g7_model.yaml과 configs/g7_judge.yaml 를 참조하기 때문에, 명시하지 않아도 무방합니다.
 
 또한 --malicious_agents 옵션도 측정 시 기입할 필요 없습니다. 
 --malicious_agents 옵션을 주지 않으면 디폴트로 사전 지정해둔 malicious_agents로 벤치마크가 진행되기 때문입니다.
 
 --execute 옵션을 포함해야 실제 api 호출을 통한 벤치마크가 진행되기 때문에, 꼭 포함해주시길 바랍니다.
 
---experiment_id 옵션은, mas별로 따로따로 지정해주세요.
+--experiment_id 옵션은, **mas별**로 따로따로 지정해주세요.
 
 **벤치마크 데이터는 ./outputs 폴더에 저장되며, 이전의 /logs 폴더는 레거시로써 더이상 사용하지 않는 경로입니다.**
-
----
-
-#### LM Studio(Bionic) 활용 프레임워크 동작 검증
-
-**legacy 6종 (override 플래그):**
-  .aciarena/bin/python benchmark.py --mas camel --task_domain math --suite hijacking \
-    --limit 2 \
-    --execute \
-    --model_config configs/lmstudio_model.yaml \
-    --judge_config configs/lmstudio_judge.yaml \
-    --experiment_id fw-check-lmstudio
-
-**CrewAI (experiment_config 지정):**
-  .aciarena/bin/python benchmark.py --mas crewai_seq_nodeleg --suite hijacking \
-    --task_domain math --limit 2 --execute \
-    --experiment_config configs/experiments/lmstudio_check.yaml \
-    --experiment_id fw-check-lmstudio

@@ -117,7 +117,7 @@ class AttackCatalog:
         except (OSError, ValueError) as exc:
             raise CatalogError('Cannot read a valid attack manifest') from exc
         manifest_version = manifest.get('manifest_version') if isinstance(manifest, dict) else None
-        if manifest_version not in {'g0-v1', 'g5-v1', 'g5-v2'}:
+        if manifest_version not in {'g0-v1', 'g5-v1', 'g5-v2', 'g7'}:
             raise CatalogError('Unsupported attack manifest version')
         self.manifest_version = manifest_version
         entries = manifest.get('attacks')
@@ -144,7 +144,7 @@ class AttackCatalog:
             raise CatalogError('Attack categories do not match the manifest version policy')
         if manifest_version == 'g0-v1' and len(specs) != 8:
             raise CatalogError('G0 requires eight representative attacks')
-        if manifest_version in {'g5-v1', 'g5-v2'} and len(specs) != 22:
+        if manifest_version in {'g5-v1', 'g5-v2', 'g7'} and len(specs) != 22:
             raise CatalogError('G5 requires all 22 unique Math/Code attacks')
         self._specs = MappingProxyType(specs)
         self._classes = MappingProxyType(classes)
@@ -171,7 +171,7 @@ class AttackCatalog:
             raise CatalogError('Domain coverage disagrees with the category contract')
         if spec.goal != spec.attack_category.split('_', 1)[0]:
             raise CatalogError('Category and goal disagree')
-        variant = ('v2' if manifest_version == 'g5-v2'
+        variant = ('v2' if manifest_version in {'g5-v2', 'g7'}
                    and spec.attack_category == 'hijacking_math_invert' else 'v1')
         if spec.attack_id != f'{spec.attack_category}.{spec.surface}.{variant}':
             raise CatalogError('Attack ID must identify the category, surface and variant version')
