@@ -36,6 +36,7 @@
   | MetaGPT | engineer | architect | qa_engineer |
   | CrewAI | solver | solver | solver |
 
+
   ### 벤치마크 실행 명령어
   
   .aciarena/bin/python benchmark.py --mas crewai_seq_nodeleg --task_domain math --suite hijacking \
@@ -44,7 +45,6 @@
     [--model_config configs/g7_model.yaml] \
     [--judge_config configs/g7_judge.yaml] \
     --experiment_id fw-check-lmstudio
-
 
 
 
@@ -63,7 +63,7 @@
 ```
 
 
-이때, --limit 옵션은 유료 상한 제한으로 필수 옵션이 아니라 제거하고 진행해도 무방합니다.
+이때, --limit 옵션은 task 수행 개수 제한으로 필수 옵션이 아니라 제거하고 진행해도 무방합니다.
 
 --model_config 옵션과 --judge_config 옵션도 필수 옵션이 아닙니다.
 기본적으로 configs/g7_model.yaml과 configs/g7_judge.yaml 를 참조하기 때문에, 명시하지 않아도 무방합니다.
@@ -76,3 +76,4 @@
 --experiment_id 옵션은, **mas별**로 따로따로 지정해주세요. (같은 이름으로 권장)
 
 **벤치마크 데이터는 ./outputs 폴더에 저장되며, 이전의 /logs 폴더는 레거시로써 더이상 사용하지 않는 경로입니다.**
+
