@@ -49,17 +49,17 @@
 
 
 ## 하나의 mas 당 실행할 명령어 리스트
- - **camel의 경우**
+ - **sc의 경우**
 ```
-.aciarena/bin/python benchmark.py --mas camel --task_domain math --suite benign --execute --experiment_id camel
-.aciarena/bin/python benchmark.py --mas camel --task_domain math --suite hijacking --execute --experiment_id camel
-.aciarena/bin/python benchmark.py --mas camel --task_domain math --suite disruption --execute --experiment_id camel
-.aciarena/bin/python benchmark.py --mas camel --task_domain math --suite disclosure --execute --experiment_id camel
+.aciarena/bin/python benchmark.py --mas sc --task_domain math --suite benign --execute --experiment_id sc
+.aciarena/bin/python benchmark.py --mas sc --task_domain math --suite hijacking --execute --experiment_id sc
+.aciarena/bin/python benchmark.py --mas sc --task_domain math --suite disruption --execute --experiment_id sc
+.aciarena/bin/python benchmark.py --mas sc --task_domain math --suite disclosure --execute --experiment_id sc
 
-.aciarena/bin/python benchmark.py --mas camel --task_domain code --suite benign --execute --experiment_id camel
-.aciarena/bin/python benchmark.py --mas camel --task_domain code --suite hijacking --execute --experiment_id camel
-.aciarena/bin/python benchmark.py --mas camel --task_domain code --suite disruption --execute --experiment_id camel
-.aciarena/bin/python benchmark.py --mas camel --task_domain code --suite disclosure --execute --experiment_id camel
+.aciarena/bin/python benchmark.py --mas sc --task_domain code --suite benign --execute --experiment_id sc
+.aciarena/bin/python benchmark.py --mas sc --task_domain code --suite hijacking --execute --experiment_id sc
+.aciarena/bin/python benchmark.py --mas sc --task_domain code --suite disruption --execute --experiment_id sc
+.aciarena/bin/python benchmark.py --mas sc --task_domain code --suite disclosure --execute --experiment_id sc
 ```
 
 
