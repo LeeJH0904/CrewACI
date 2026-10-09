@@ -26,6 +26,9 @@
 
 ### code task
 
+ - **2610091120추가**
+ - **code task는 각 mas의 거의 모든 malicious_agent를 벤치 돌린 후 판단하는 방향으로 결정. 자세한 내용은 D66,D67 항목 참조**
+
   | MAS | Hijacking | Disruption | Disclosure |
   |---|---|---|---|
   | CAMEL | critic | task_specifier | user_proxy |
