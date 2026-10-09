@@ -127,7 +127,9 @@ class RecordedEvaluationSuite:
             raise RuntimeError(f'Experiment audit failed: {report["errors"]}')
         utility = [r for r in rows if r.status == 'success' and r.utility_status == 'valid']
         attacks = [r for r in rows if r.status == 'success' and r.attack_status == 'valid']
-        result = {'experiment_id': self.executor.experiment_id, 'planned_runs': len(futures),
+        result = {'experiment_id': self.executor.experiment_id,
+                  'target_agent': None if self.args.suite == 'benign' else self.executor.target,
+                  'planned_runs': len(futures),
                   'returned_runs': len(rows), 'completed_runs': sum(r.is_complete for r in rows),
                   'execution_errors': sum(r.status != 'success' for r in rows),
                   'utility_denominator': len(utility), 'attack_denominator': len(attacks),

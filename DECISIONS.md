@@ -665,6 +665,10 @@ CrewAI recorded 경로와 기존 legacy MAS 경로의 평가 비대칭 정리(`�
   선택으로, 기본 계획은 G7에서 CrewAI 포함 전부 재실행(→ `outputs/g7/…`·`g7-…`)이며 G6 동결은
   독립 벤치로 보존한다(CrewAI 수치가 G6·G7에 각각 존재하는 것은 D30상 정상). 상세는
   `구현문서/G7_사전_확정_진행_사항.md` C10.
+- **정정(2026-10-09, D68):** ⑤의 "G7 코드 변경 후에도 G6 frozen verifier가 PASS한다"는 커밋
+  `ce39ceb`(2026-09-21) 직전까지만 성립한다. `ce39ceb`가 `catalog.py`·`recorded_executor.py`·
+  `recorded_suite.py`를 수정해 현재 소스에서는 `config_source_drift`로 FAIL한다. 재검증 방식은 D68을
+  따른다.
 
 ### D66 — G7 Code 도메인 target = 전 agent 측정 후 worst-case 채택(2026-10-09)
 
@@ -723,3 +727,47 @@ CrewAI recorded 경로와 기존 legacy MAS 경로의 평가 비대칭 정리(`�
 - **영향:** G7 Code target 표(측정 후 ②로 확정), Code 추가 수집(측정 대상 공격 행 합계 8,400,
   기존 `.exp1` 2,940행 포함), 보고서 본문·부록 구성, D59 ①(전 agent 스윕 미채택)·③의 Code
   부분 대체, D67(CrewAI target 확장)과 연동.
+
+### D67 — CrewAI reviewer·finalizer target 직접 구현(2026-10-09)
+
+- **결정:**
+  - ① D66 ⑤에 따라 CrewAI의 target을 solver·reviewer·finalizer 중에서 지정할 수 있게 한다.
+    구현은 Math·Code 공통으로 동작한다.
+  - ② **기존 CrewAI 코드에 직접 구현한다.** target을 매개변수로 받도록 `catalog.py`(허용 target),
+    `message_bus.py`(대상 실행·주입 관측), `recorded_executor.py`(악성 agent 지정·`malicious_agent`
+    기록·설정 스냅샷), `audit.py`(주입 증거 검사)를 고친다. `benchmark.py`는 target을 검증해 같은
+    경로로 넘긴다. 별도 확장 모듈은 두지 않는다.
+  - ③ legacy 6종의 config_hash에 포함되는 파일(`records.py`·`run_writer.py`·`normalizers.py`·
+    `utils/factory.py`·`attacks/base_attack.py`·`mas/base_mas.py`·`agent_components/`·
+    `evaluation/task/`·`legacy_recording.py`·`g7_*.py`·`manifests/g7/`)은 수정하지 않는다. legacy
+    `.exp1` 데이터는 그대로 유효하다.
+  - ④ 설정 스냅샷에 `crewai_target`(기본 solver)을 기록하므로 target별로 config_hash가 다르다.
+    benign에는 target을 지정할 수 없다.
+  - ⑤ 주입 증거 기준: instruction=target의 LLM 입력 끝에 payload 추가, agent=target 프로필 교체와
+    그 프로필의 LLM 입력 반영, message=target의 출력 메시지가 payload로 대체(solver→reviewer
+    `context`, reviewer→finalizer `review`, finalizer→user `final`).
+  - ⑥ **CrewAI G7은 전체 재수집한다.** 직접 구현으로 CrewAI 소스 해시가 바뀌어 기존 CrewAI G7
+    데이터(`outputs/g7/.exp1/crewai`)는 집계 스냅샷 검증을 통과하지 못한다. 기존 데이터는 원본
+    그대로 보존하고, 재수집(solver 996행 + reviewer·finalizer Code 840행)은
+    `--experiment_id crewai_exp2`에 저장한다.
+  - ⑦ target별 집계 스크립트와 `scripts/aggregate_g7.py` 수정은 이번 범위에서 제외한다. 실행
+    종료 시 출력되는 UA·ASR은 해당 명령의 행(target 구분됨)만으로 계산된다.
+- **근거:** 처음에는 기존 파일을 고치지 않는 상속 확장 모듈로 구현했다(G6 동결 검증과 기존 CrewAI
+  데이터 보존 목적). G6 재검증을 D68 운영 규칙으로 정리하고 CrewAI 전체 재수집을 결정하면서, 중복
+  코드(`_attempt` 약 170줄 복제) 없이 한 경로로 유지하는 직접 구현으로 바꿨다. 확장 모듈은 커밋 전
+  되돌렸다.
+- **알려진 동작:** finalizer에 message 공격을 걸면 최종 답이 payload 그 자체가 된다(legacy의 최종
+  응답 agent에 message 공격을 거는 경우와 같다).
+- **영향:** 위 CrewAI 파일·`benchmark.py`·테스트·README. CrewAI G7 재수집 1,836행.
+
+### D68 — G6 동결 재검증은 `ce39ceb` 이전 커밋에서 수행(2026-10-09)
+
+- **결정:** G6 동결 재검증(`scripts/verify_g6_frozen.py`)은 현재 소스가 아니라 커밋 `ce39ceb`
+  (2026-09-21) **이전** 커밋을 별도 checkout/worktree로 받아 실행한다. 현재 소스에서 검증기가
+  `config_source_drift`로 FAIL하는 것은 예상된 결과로 본다.
+- **근거:** `ce39ceb`가 `catalog.py`·`recorded_executor.py`·`recorded_suite.py`를 수정했고, D67이
+  CrewAI 소스를 추가로 수정한다. 검증기는 G5-v2 설정 스냅샷의 소스 해시와 현재 소스를 비교하므로
+  현재 소스로는 통과할 수 없다. 동결 데이터 자체의 무결성(artifact SHA-256 16/16, 1,056행, 동결
+  수치 재계산)은 현재 소스에서도 확인된다. 과거 단계 산출물을 당시 커밋에서 재감사하는 방식은
+  D52(G0~G4)와 같다.
+- **영향:** D65 ⑤ 정정, G6 재현 절차, 보고서의 재현성 서술.

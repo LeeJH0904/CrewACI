@@ -156,17 +156,22 @@ def _config_snapshot_errors(config_hash, config_directory, catalog):
 def _activation_errors(record: RunRecord, messages: list[MessageRecord], spec):
     if record.attack_id == 'none' or record.status != 'success':
         return []
+    from aciarena.attacks.catalog import CREWAI_MESSAGE_ROUTES
+
     errors = []
     label = f'{record.task_id}/{record.attack_id}'
+    target = record.malicious_agent
+    if target not in CREWAI_MESSAGE_ROUTES:
+        return [f'unsupported_target:{label}:{target}']
     if record.target_invoked is not True:
         errors.append(f'target_not_invoked:{label}')
     if record.payload_injected is not True:
         errors.append(f'payload_not_injected:{label}')
     direct = [message for message in messages if message.is_attacked]
     expected = {
-        'instruction': {('solver', 'llm', 'llm_input')},
-        'agent': {('solver', 'solver', 'profile'), ('solver', 'llm', 'llm_input')},
-        'message': {('solver', 'reviewer', 'context')},
+        'instruction': {(target, 'llm', 'llm_input')},
+        'agent': {(target, target, 'profile'), (target, 'llm', 'llm_input')},
+        'message': {CREWAI_MESSAGE_ROUTES[target]},
     }[record.attack_surface]
     observed = {(message.sender, message.receiver, message.phase) for message in direct}
     if not expected <= observed:
@@ -186,7 +191,7 @@ def _activation_errors(record: RunRecord, messages: list[MessageRecord], spec):
         errors.append(f'attack_payload_evidence_mismatch:{label}')
     if any(message.attack_id != record.attack_id for message in direct):
         errors.append(f'attack_evidence_id_mismatch:{label}')
-    if any(message.sender not in {'solver'} for message in direct):
+    if any(message.sender != target for message in direct):
         errors.append(f'non_target_direct_attack_evidence:{label}')
     return errors
 
@@ -253,9 +258,18 @@ def audit_matrix_records(plan, records, messages, tasks, catalog, *,
         complete = next((record for record in candidates if record.is_complete), None)
         adopted[key] = complete or candidates[-1]
 
+    # The run's target is fixed by its config snapshot (D67); snapshots that predate
+    # the field use the manifest default target.
+    configured_targets = {}
     if config_directory is not None:
         for config_hash in sorted({record.config_hash for record in adopted.values()}):
             errors.extend(_config_snapshot_errors(config_hash, config_directory, catalog))
+            try:
+                snapshot = json.loads((config_directory / f'{config_hash}.json').read_text())
+            except (OSError, ValueError):
+                continue
+            if isinstance(snapshot, dict) and 'crewai_target' in snapshot:
+                configured_targets[config_hash] = snapshot['crewai_target']
 
     message_groups = defaultdict(list)
     for message in messages:
@@ -289,7 +303,8 @@ def audit_matrix_records(plan, records, messages, tasks, catalog, *,
                 record.malicious_agent, record.payload_hash,
             )
             expected_metadata = (
-                spec.attack_category, spec.goal, spec.surface, spec.target, spec.payload_hash,
+                spec.attack_category, spec.goal, spec.surface,
+                configured_targets.get(record.config_hash, spec.target), spec.payload_hash,
             )
             if actual_metadata != expected_metadata:
                 errors.append(f'attack_metadata_mismatch:{record.task_id}/{record.attack_id}')

@@ -21,7 +21,7 @@ from .records import RETRYABLE_ERROR_TYPES, RunIdentity, RunRecord, canonical_ha
 from .run_writer import RunWriter, StorageError, RecordConflictError
 from .configuration import UTILITY_VERIFIER_VERSION
 from .normalizers import NORMALIZER_VERSION, normalize_response
-from aciarena.attacks.catalog import AttackCatalog, CatalogError
+from aciarena.attacks.catalog import CREWAI_TARGETS, AttackCatalog, CatalogError
 from aciarena.mas.crewai.message_bus import RunTrace, ProtocolError, utc_now
 from aciarena.utils.factory import build_attack, build_mas
 
@@ -157,7 +157,8 @@ def load_task_manifest(path=None):
 
 def recorded_configuration(model_config, judge_config, experiment_contract,
                            task_manifest, catalog,
-                           utility_verifier_version=UTILITY_VERIFIER_VERSION):
+                           utility_verifier_version=UTILITY_VERIFIER_VERSION,
+                           target='solver'):
     """Build the exact public configuration snapshot used in RunIdentity."""
     model = copy.deepcopy(model_config)
     if not model.get('model_name') or model.get('provider') not in ('openai',):
@@ -165,6 +166,8 @@ def recorded_configuration(model_config, judge_config, experiment_contract,
     model.setdefault('temperature', 0.0)
     model.setdefault('max_tokens', 1024)
     model.setdefault('seed', 42)
+    if target not in CREWAI_TARGETS:
+        raise ValueError(f'Unsupported Sequential target: {target!r}')
     sources = [
         'aciarena/mas/crewai/sequential_mas.py',
         'aciarena/mas/crewai/agents/crewai_agent.py',
@@ -216,6 +219,7 @@ def recorded_configuration(model_config, judge_config, experiment_contract,
             'Agent+Judge SDK invocations; known token lower bounds retained; '
             'missing-usage calls counted explicitly'),
         'retry_policy': 'sdk-max-retries-0/explicit-transient-provider/max-3-attempts-v2',
+        'crewai_target': target,
     }
     return model, config
 
@@ -253,6 +257,7 @@ class RecordedTaskExecutor:
             spec = self.catalog.get(attack_id, task_domain=args.task_domain)
             if (spec.goal if spec else 'benign') != args.suite:
                 raise ValueError('attack_id and suite disagree')
+        self.target = sequential_target(args)
         self.utility_verifier = utility_verifier
         self.utility_verifier_version = utility_verifier_version or UTILITY_VERIFIER_VERSION
         self.stop = threading.Event()
@@ -276,6 +281,7 @@ class RecordedTaskExecutor:
             self.task_manifest,
             self.catalog,
             self.utility_verifier_version,
+            self.target,
         )
 
     def execute(self, mas_config, task, *, attack_id, task_id=None, repetition=1,
@@ -332,6 +338,7 @@ class RecordedTaskExecutor:
             attempt_no,
             spec,
             self.stop,
+            target=self.target,
             now=attempt_now,
         )
         task = copy.deepcopy(task)
@@ -344,9 +351,10 @@ class RecordedTaskExecutor:
             # Persist the task before object/provider construction can fail.
             trace.emit('executor', 'solver', 'task', task.get_query())
             attack = build_attack(identity.attack_id, task_domain=task_domain(task), args=self.args,
-                                  llm_config=self.judge_config, catalog=self.catalog)
+                                  llm_config=self.judge_config, catalog=self.catalog,
+                                  target=self.target)
             mas_args = copy.deepcopy(self.args)
-            mas_args.malicious_agents = ['solver'] if spec else []
+            mas_args.malicious_agents = [self.target] if spec else []
             mas = build_mas(mas_args, copy.deepcopy(model), trace)
             if mas.max_turn != 1:
                 raise ProtocolError('Sequential must run one pipeline turn')
@@ -452,7 +460,7 @@ class RecordedTaskExecutor:
                                'aciarena/mas/crewai/agents/reviewer_agent.py', 'aciarena/mas/crewai/agents/finalizer_agent.py')}),
                            verifier_version=self.utility_verifier_version + '/' + (spec.verifier_source_hash if spec else 'none'),
                            attack_category=spec.attack_category if spec else None, attack_goal=spec.goal if spec else None,
-                           attack_surface=spec.surface if spec else None, malicious_agent=spec.target if spec else None,
+                           attack_surface=spec.surface if spec else None, malicious_agent=self.target if spec else None,
                            payload_hash=spec.payload_hash if spec else None, target_invoked=trace.target_invoked,
                            payload_injected=trace.payload_injected,
                            raw_response=result['raw_response'] if result is not None else trace.final_output,
@@ -466,6 +474,19 @@ class RecordedTaskExecutor:
                            started_at=started, finished_at=attempt_now())
         self.writer.append_run(record)
         return record
+
+
+def sequential_target(args):
+    """The single malicious Sequential agent (D67); the Solver unless one is given."""
+    requested = list(getattr(args, 'malicious_agents', None) or [])
+    if len(requested) > 1:
+        raise ValueError('Sequential runs take exactly one malicious agent')
+    target = requested[0] if requested else 'solver'
+    if target not in CREWAI_TARGETS:
+        raise ValueError(f'Unsupported Sequential target: {target!r}')
+    if target != 'solver' and getattr(args, 'suite', None) == 'benign':
+        raise ValueError('A benign run has no attack target')
+    return target
 
 
 def task_domain(task):

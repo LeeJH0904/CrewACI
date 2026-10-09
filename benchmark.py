@@ -44,10 +44,17 @@ def _crewai_g7_args(args, manifest):
     requested_targets = list(getattr(args, 'malicious_agents', []))
     expected_target = None if args.suite == 'benign' else manifest.target(
         args.mas, args.task_domain, args.suite)
-    if requested_targets and requested_targets != [expected_target]:
-        raise G7ManifestError(
-            f'CrewAI G7 target is fixed to {expected_target!r}')
-    prepared.malicious_agents = [] if expected_target is None else [expected_target]
+    # D67: an attack run may target any one Sequential agent; the manifest target
+    # (Solver) is the default. A benign run has no target.
+    if requested_targets:
+        if expected_target is None:
+            raise G7ManifestError('A benign CrewAI run has no attack target')
+        agents = manifest.systems[args.mas]['agents']
+        if len(requested_targets) != 1 or requested_targets[0] not in agents:
+            raise G7ManifestError(
+                f'CrewAI G7 target must be exactly one of {list(agents)!r}')
+    target = requested_targets[0] if requested_targets else expected_target
+    prepared.malicious_agents = [] if target is None else [target]
     available = (('none',) if args.suite == 'benign'
                  else manifest.attack_ids(args.task_domain, args.suite))
     requested_attacks = getattr(args, 'attack_ids', None)

@@ -4,6 +4,7 @@ import copy
 from datetime import datetime, timezone
 import json
 
+from aciarena.attacks.catalog import CREWAI_MESSAGE_ROUTES, CREWAI_TARGETS
 from aciarena.evaluation.records import MessageRecord
 from aciarena.evaluation.run_writer import StorageError
 
@@ -17,9 +18,12 @@ class ProtocolError(ValueError):
 
 
 class RunTrace:
-    def __init__(self, writer, run_id, attempt_no, spec, stop, *, now=utc_now):
+    def __init__(self, writer, run_id, attempt_no, spec, stop, *, target='solver', now=utc_now):
+        if target not in CREWAI_TARGETS:
+            raise ProtocolError(f'Unsupported Sequential target: {target!r}')
         self.writer, self.run_id, self.attempt_no = writer, run_id, attempt_no
         self.spec, self.stop = spec, stop
+        self.target = target
         self.now = now
         self.attack_id = spec.attack_id if spec else 'none'
         self.target_invoked = False if spec else None
@@ -55,8 +59,9 @@ class RunTrace:
         phase = phases.get((sender, receiver))
         if phase is None:
             raise ProtocolError('Unexpected Sequential message route')
-        attacked = bool(self.spec and self.spec.surface == 'message' and sender == 'solver'
-                        and receiver == 'reviewer' and message == self.spec.payload)
+        attacked = bool(self.spec and self.spec.surface == 'message'
+                        and (sender, receiver, phase) == CREWAI_MESSAGE_ROUTES[self.target]
+                        and message == self.spec.payload)
         self.emit(sender, receiver, phase, message, attacked=attacked)
         if attacked:
             self.payload_injected = True
@@ -66,7 +71,7 @@ class RunTrace:
     def profiles(self, mas, originals):
         self.original_profiles = originals
         for name, agent in mas.agents.items():
-            attacked = bool(self.spec and self.spec.surface == 'agent' and name == 'solver'
+            attacked = bool(self.spec and self.spec.surface == 'agent' and name == self.target
                             and agent.profile != originals[name] and self.spec.payload in agent.profile)
             self.emit(name, name, 'profile', agent.profile, originals[name], attacked)
             if attacked:
@@ -78,7 +83,7 @@ class RunTrace:
         def run_step(query, *args, **kwargs):
             if self.stop.is_set():
                 raise StorageError('Execution stopped after a storage failure')
-            if self.spec and name == 'solver':
+            if self.spec and name == self.target:
                 self.target_invoked = True
             self.inputs[name] = query
             return original(query, *args, **kwargs)
@@ -124,7 +129,7 @@ class RunTrace:
             snapshot = copy.deepcopy(messages)
             before = copy.deepcopy(snapshot)
             attacked = False
-            if not judge and self.spec and name == 'solver':
+            if not judge and self.spec and name == self.target:
                 if self.spec.surface == 'instruction' and snapshot:
                     actual = snapshot[-1].get('content')
                     expected = self.inputs.get(name)

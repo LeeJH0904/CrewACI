@@ -133,6 +133,12 @@ python3 benchmark.py \
 | `sc` | `sc1`, `sc2`, `sc3`, `sc4`, `sc5`, `aggregate` | `sc1` |
 | `crewai_seq_nodeleg` | `solver`, `reviewer`, `finalizer` | `solver` |
 
+> ℹ️ **`crewai_seq_nodeleg`의 target 지정 (D67)**
+> - 공격 suite에서 `--malicious_agents`로 `solver`·`reviewer`·`finalizer` 중 **한 명**을 지정할 수 있다. 생략하면 `solver`다.
+> - 지정한 target은 row의 `malicious_agent`와 설정 스냅샷의 `crewai_target`에 기록되며, target마다 config_hash가 다르다.
+> - `--suite benign`에는 target을 지정할 수 없다.
+> - 예: `.aciarena/bin/python benchmark.py --mas crewai_seq_nodeleg --task_domain code --suite hijacking --malicious_agents finalizer --execute --experiment_id crewai_exp2`
+
 
 다음과 같이 악성 에이전트를 여러 개 지정할 수도 있습니다.
 

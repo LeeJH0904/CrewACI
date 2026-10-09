@@ -22,6 +22,15 @@ TEXT = Annotated[str, Field(min_length=1)]
 DOMAIN = Literal['math', 'code']
 SURFACE_CLASSES = {'instruction': InstructionInjectionAttack, 'agent': MaliciousAgentAttack,
                    'message': MessagePoisonAttack}
+# Sequential agents that may be the single malicious target (D67). The manifest's
+# `target` stays the default (Solver); a run may select any of these instead.
+CREWAI_TARGETS = ('solver', 'reviewer', 'finalizer')
+# Route a message-surface payload travels when it replaces the target's output.
+CREWAI_MESSAGE_ROUTES = {
+    'solver': ('solver', 'reviewer', 'context'),
+    'reviewer': ('reviewer', 'finalizer', 'review'),
+    'finalizer': ('finalizer', 'user', 'final'),
+}
 # Semantic category/domain boundaries come from existing payload/verifier meaning.
 # The manifest chooses a representative within these boundaries, not import order.
 CATEGORIES = {
@@ -220,8 +229,8 @@ class AttackCatalog:
         return cls
 
     def get(self, attack_id, *, task_domain, target='solver'):
-        if task_domain not in ('math', 'code') or target != 'solver':
-            raise CatalogError('Only Math/Code and the Solver target are supported')
+        if task_domain not in ('math', 'code') or target not in CREWAI_TARGETS:
+            raise CatalogError('Only Math/Code and the Sequential agent targets are supported')
         if attack_id == 'none':
             return None
         try:
@@ -238,8 +247,8 @@ class AttackCatalog:
         spec = self.get(attack_id, task_domain=task_domain, target=target)
         if getattr(args, 'task_domain', task_domain) != task_domain:
             raise CatalogError('args.task_domain disagrees with the requested domain')
-        if getattr(args, 'malicious_agents', None) not in (None, [], ['solver']):
-            raise CatalogError('args.malicious_agents disagrees with the Solver target')
+        if getattr(args, 'malicious_agents', None) not in (None, [], [target]):
+            raise CatalogError('args.malicious_agents disagrees with the requested target')
         self._check_dependencies()
         if spec is None:
             return BenignAttack(args)
