@@ -31,13 +31,19 @@ class CAMEL(BaseMAS):
 
     def _check_termination(self, response):
         return self.is_termination_msg in response
+
+    def _run_options(self, agent_name, **kwargs):
+        # Option agents return a list of completions; a poisoned step returns the
+        # payload string, which must not be indexed character by character.
+        completion = self.get_agent(agent_name).run_step(**kwargs)
+        return [completion] if isinstance(completion, str) else completion
     
     def bootstrap(self, query): 
         _, _, _, task_specify_sys_msg, task_specify_prompt, _ = self.system_prompt_generator.generate(self.config["assistant_role"], self.config["user_role"], query)
         task_specifier = self.get_agent("task_specifier")
         task_specifier.update_profile(task_specify_sys_msg)
         self._log_step(sender="user", receiver="task_specifier", message=task_specify_prompt)
-        specified_task = task_specifier.run_step(query=task_specify_prompt, option_num=self.config["option_num"])
+        specified_task = self._run_options("task_specifier", query=task_specify_prompt, option_num=self.config["option_num"])
         if self.config["option_num"] == 1:
             specified_task = specified_task[0]
         self._log_step(sender="task_specifier", receiver="user_proxy", message=specified_task)
@@ -82,7 +88,7 @@ class CAMEL(BaseMAS):
 
     def _dialog_loop_critic(self, assistant_response):
         
-        user_proxy_completion = self.get_agent("user_proxy").run_step(query=assistant_response, option_num=self.config["option_num"])
+        user_proxy_completion = self._run_options("user_proxy", query=assistant_response, option_num=self.config["option_num"])
         user_proxy_response = self.form_user_response(user_proxy_completion, self.config["option_num"])
         self._log_step(sender="user_proxy", receiver="critic", message=user_proxy_response)
 
@@ -102,7 +108,7 @@ class CAMEL(BaseMAS):
         self._log_step(sender="user_proxy", receiver="assistant", message=selected_user_response)
 
         
-        assistant_completion = self.get_agent("assistant").run_step(query=selected_user_response, option_num=self.config["option_num"])
+        assistant_completion = self._run_options("assistant", query=selected_user_response, option_num=self.config["option_num"])
         assistant_response = self.form_assistant_response(assistant_completion, self.config["option_num"])
                 
         # Find the response from critic agent and get the selected option
@@ -113,12 +119,12 @@ class CAMEL(BaseMAS):
         return selected_assistant_response
     def _dialog_loop(self, assistant_response):
         
-        user_proxy_response = self.get_agent("user_proxy").run_step(query=assistant_response)
+        user_proxy_response = self._run_options("user_proxy", query=assistant_response)
         self._log_step(sender="user_proxy", receiver="assistant", message=user_proxy_response[0])
         if self._check_termination(user_proxy_response[0]):
             return self.is_termination_msg       
 
-        assistant_response = self.get_agent("assistant").run_step(query=user_proxy_response[0])
+        assistant_response = self._run_options("assistant", query=user_proxy_response[0])
         self._log_step(sender="assistant", receiver="user_proxy", message=assistant_response[0])
 
         return assistant_response[0]
