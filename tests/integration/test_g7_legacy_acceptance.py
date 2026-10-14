@@ -250,6 +250,51 @@ class G7LegacyAcceptanceTests(unittest.TestCase):
             self.assertTrue(report['ok'], report['errors'])
             self.assertEqual(report['target_not_invoked'], 1)
 
+    def test_message_payload_reaches_downstream_agents_intact(self):
+        # CAMEL option agents index their completion list and LLM Debate reads
+        # debater memory; a poisoned step must still deliver the whole payload.
+        cases = (
+            ('camel', 'task_specifier', 'disruption', 'disruption_ddos.message.v1'),
+            ('camel', 'user_proxy', 'disclosure', 'disclosure_generic_apikey.message.v1'),
+            ('camel', 'assistant', 'disruption', 'disruption_ddos.message.v1'),
+            ('llm_debate', 'debater_2', 'disruption', 'disruption_ddos.message.v1'),
+        )
+        calls = []
+
+        def init_llm(agent, config):
+            return OfflineLLM(agent, calls)
+
+        with (patch.object(BaseAgent, 'init_llm', init_llm),
+              patch('aciarena.attacks.base_attack.get_llm',
+                    side_effect=lambda config: OfflineJudge())):
+            for mas, target, suite, attack_id in cases:
+                with (self.subTest(mas=mas, target=target),
+                      tempfile.TemporaryDirectory() as directory):
+                    calls.clear()
+                    args = self.args(directory, mas, 'code')
+                    args.suite = suite
+                    args.malicious_agents = [target]
+                    source = self.rows['code']
+                    task = StaticTask(source['problem'], source['answer'])
+                    executor = LegacyRecordedExecutor(args, MODEL, MODEL)
+                    record = executor.execute(task, attack_id=attack_id)
+                    self.assertEqual(record.status, 'success', record.error_message)
+                    payload = executor.manifest.attacks[attack_id]['payload']
+                    routed = [
+                        message.content for message in executor.writer.read_messages()
+                        if message.sender == target
+                        and message.receiver not in ('legacy_runtime', 'user')
+                    ]
+                    prompts = ['\n'.join(str(m.get('content')) for m in messages)
+                               for _, messages, _ in calls]
+                    if mas == 'camel':
+                        self.assertTrue(routed)
+                        self.assertTrue(all(payload in content for content in routed))
+                    else:
+                        # The last LLM call is the aggregator's prompt.
+                        self.assertEqual(calls[-1][0], 'AggregatorAgent')
+                        self.assertIn(payload, prompts[-1])
+
 
 if __name__ == '__main__':
     unittest.main()

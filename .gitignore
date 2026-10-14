@@ -26,6 +26,7 @@ __pycache__/
 /outputs/g5-v2/provider_preflight.json
 
 /outputs/g7/**
+/outputs/g7_261014_backup/**
 
 benchmark_agentverse.sh
 benchmark_autogen.sh

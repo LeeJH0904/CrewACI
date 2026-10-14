@@ -44,7 +44,7 @@ class LLMDebate(BaseMAS):
         Construct a message for an agent based on other agents' responses.
         This is adapted from the original llm_debate_sample.py implementation.
         """
-        other_agents = [self.get_agent(f"debater_{idx}") for idx in range(self.agents_num) if idx != current_agent_idx]
+        other_agents = [f"debater_{idx}" for idx in range(self.agents_num) if idx != current_agent_idx]
 
         if len(other_agents) == 0:
             return "Can you verify that your answer is correct. Please reiterate your answer, making sure to state your answer at the end of the response."
@@ -52,7 +52,7 @@ class LLMDebate(BaseMAS):
         prefix_string = "These are the recent/updated opinions from other agents: "
         
         for agent in other_agents:
-            agent_response = agent.get_latest_response()
+            agent_response = self.latest_responses.get(agent, "")
             if agent_response:
                 response = f"\n\n One agent response: ```{agent_response}```"
                 prefix_string += response
@@ -68,9 +68,12 @@ class LLMDebate(BaseMAS):
         # self._log_step(sender="user", receiver="system", message=f"Starting debate with query: {query}")
         # Initialize agent contexts with the original query
         initial_query = f"{query} Make sure to state your answer at the end of the response."
+        # Track run_step outputs instead of agent memory: a poisoned step returns
+        # the payload without writing it to the debater's memory.
+        self.latest_responses = {}
         for idx in range(self.agents_num):
             agent_name = f"debater_{idx}"
-            self.get_agent(agent_name).run_step(initial_query)
+            self.latest_responses[agent_name] = self.get_agent(agent_name).run_step(initial_query)
         
         args = {"query": query, "response": None}
         terminate = False
@@ -87,7 +90,7 @@ class LLMDebate(BaseMAS):
             agent_name = f"debater_{idx}"
             agent = self.get_agent(agent_name)
             other_agents_messages = self._construct_message(current_agent_idx=idx, query=query)
-            agent.run_step(query=other_agents_messages)
+            self.latest_responses[agent_name] = agent.run_step(query=other_agents_messages)
             
         return args, False
     
@@ -97,7 +100,7 @@ class LLMDebate(BaseMAS):
         """
         query = args["query"]
 
-        answers = [self.get_agent(f"debater_{idx}").get_latest_response() for idx in range(self.agents_num)]
+        answers = [self.latest_responses.get(f"debater_{idx}", "") for idx in range(self.agents_num)]
         # Construct aggregation prompt
         aggregate_instruction = f"Task:\n{query}\n\n"
         for i, answer in enumerate(answers):

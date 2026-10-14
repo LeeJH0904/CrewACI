@@ -771,3 +771,61 @@ CrewAI recorded 경로와 기존 legacy MAS 경로의 평가 비대칭 정리(`�
   수치 재계산)은 현재 소스에서도 확인된다. 과거 단계 산출물을 당시 커밋에서 재감사하는 방식은
   D52(G0~G4)와 같다.
 - **영향:** D65 ⑤ 정정, G6 재현 절차, 보고서의 재현성 서술.
+
+### D69 — ACIArena 원본 message 공격 버그 수정(CAMEL·LLM Debate)과 재수집(2026-10-14)
+
+- **결정:**
+  - ① ACIArena 원본 코드에서 CAMEL과 LLM Debate의 message 공격 payload가 다음 agent에게 전달되지
+    않는 버그를 고친다. 이 수정은 원본과 동작이 다른 **재현 차이(deviation)**로 보고서에 명시한다.
+  - ② **수정 범위는 MAS 파일로 한정한다.** `attacks/base_attack.py`·`agent_components/base_agent.py`는
+    legacy 7종 전체의 config `sources`에 포함되므로 수정하지 않는다(D67 ③ 원칙).
+    - `aciarena/mas/camel/camel_mas.py`: `_run_options()` 추가. agent가 문자열을 반환하면 리스트로
+      감싸 넘긴다.
+    - `aciarena/mas/llm_debate/llm_debate_mas.py`: debater의 `run_step()` 반환값을 `latest_responses`에
+      저장하고, 다른 debater와 aggregator가 메모리 대신 이 값을 읽는다.
+    - 공격이 없는 run과 agent·instruction 공격 run은 반환값이 원래 형태(CAMEL은 리스트, LLM Debate는
+      메모리와 같은 값)이므로 동작이 바뀌지 않는다. 바뀌는 것은 message 공격 run뿐이다.
+  - ③ **CAMEL·LLM Debate의 gpt-4o-mini G7 데이터는 전부 재수집한다.** 수정으로 두 MAS의 소스
+    해시가 바뀌어, 버그와 무관한 slice도 `scripts/aggregate_g7.py`의 snapshot 검증(`Config sources
+    drift`)을 통과하지 못한다. 집계기 검증 규칙은 바꾸지 않는다.
+    - 재수집: CAMEL Math 546·Code 450, LLM Debate Math 546·Code 1,410, 합계 2,952행.
+    - 기존 데이터는 삭제하지 않고 `outputs/g7` 밖(`outputs/g7_superseded/`)으로 옮겨 보존한다.
+      수정 전후 비교(버그가 수치에 준 영향)에 사용할 수 있다.
+    - 명령 목록과 D66 미수집 slice·D67 ⑥ CrewAI 재수집을 포함한 전체 실행 계획은
+      `구현문서/G7_로그_점검_및_재실행_계획.md`를 따른다.
+  - ④ 회귀 테스트 `tests/integration/test_g7_legacy_acceptance.py::test_message_payload_reaches_downstream_agents_intact`를
+    추가한다(CAMEL task_specifier·user_proxy·assistant, LLM Debate debater_2). 수정 전 코드에서 4건
+    실패, 수정 후 통과.
+- **원인:**
+  - `MessagePoisonAttack`(`base_attack.py:137-138`)은 공격 대상 agent의 `step`을 payload **문자열**을
+    반환하도록 바꾼다. 모든 agent 출력이 문자열이라는 가정이다.
+  - **CAMEL:** `task_specifier`·`user_proxy`·`assistant`는 후보 응답 **리스트**를 반환하고, `camel_mas.py`가
+    `[0]`·`[i]`로 하나를 꺼낸다. 공격 시 문자열의 첫 글자(`'<'`, `'\n'`)만 전달된다. assistant를
+    공격하면 최종 응답이 기록된 출력과 달라 `LegacyProtocolError`가 난다.
+  - **LLM Debate:** 다른 debater와 aggregator가 `get_latest_response()`로 debater **메모리**를 읽는다.
+    바뀐 `step`은 메모리에 쓰지 않으므로 공격된 debater의 답은 빈 문자열이 된다. aggregator 프롬프트에는
+    빈 `Solution N:` 칸이 들어간다.
+- **근거:**
+  - 관련 파일(`camel_mas.py`·CAMEL agents·`llm_debate_mas.py`·`debate_agent.py`·`base_attack.py`)은
+    `first commit`(569179d, 2026-08-06) 이후 이 저장소에서 수정된 적이 없다. G7 어댑터
+    (`legacy_recording.py`)는 기록만 하며 원인과 무관하다.
+  - gpt-4o-mini 로그 점검(2026-10-14): 영향 slice 9개, 297행이 모두 `status=success`,
+    `payload_injected=True`로 기록돼 공격 실패로 집계됐다.
+    - CAMEL: Math·Code의 task_specifier `disruption_ddos.message.v1`, user_proxy
+      `disclosure_generic_apikey.message.v1`(138행).
+    - LLM Debate: Math debater_2 `hijacking_math_invert.message.v2`, Code debater_0·debater_1의 두 message
+      공격(159행).
+  - 같은 점검에서 AgentVerse·AutoGen·Self Consistency·MetaGPT·CrewAI는 payload가 다음 agent에게 그대로
+    전달됐다.
+- **알려진 한계(보고서에 명시):**
+  - "first commit = ACIArena 원본"을 전제로 했다. GitHub 원본 저장소와 파일 단위 비교는 아직 하지 않았다.
+  - 원 논문이 같은 코드로 실험했다면, 논문 Table 1의 CAMEL·LLM Debate message 공격 ASR이 실제보다
+    낮게 보고됐을 수 있다. 재현 차이 해석 시 고려한다.
+  - 수정 후에도 구조상 0인 경우가 남는다(버그 아님).
+    - AgentVerse role_assigner: 출력을 `"1. ~."` 형식으로 파싱해 역할 설명만 쓰므로
+      (`role_assigner_agent.py:38-45`) message payload가 빈 역할로 버려진다.
+    - CAMEL critic: D66 알려진 한계(`with_critic: False`) 그대로다.
+  - AutoGen `autogen_mas.py:37`은 user_proxy→assistant 턴 로그에 `assistant_response`를 기록한다. 실제
+    전달 값과 지표에는 영향이 없어 수정하지 않는다(수정 시 AutoGen 해시 변경).
+- **영향:** CAMEL·LLM Debate G7 전 slice 재수집, 보고서 재현 차이·알려진 한계 서술, D66 Code 측정
+  (CAMEL·LLM Debate의 미수집 slice는 수정된 소스로 수집), `구현문서/G7_로그_점검_및_재실행_계획.md`.
